@@ -91,21 +91,12 @@
       "id": 19
     },
     {
-      "title": "denim trucker jacket",
-      "price": "45,00$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7535095156&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/WD7535095156",
-      "id": 20
-    },
-    {
-      "title": "chrome converse",
+      "title": "Chrome Converse",
+      "category": "Shoes",
       "price": "90,00$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D821756802424&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/TB821756802424",
+      "img": "images/dce4a8da9e3c2a7c4ecc9232.webp",
       "id": 21
     },
     {
