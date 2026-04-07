@@ -358,12 +358,20 @@ function checkPromoPopup() {
   if (!sitePopup.enabled) return;
   if (sessionStorage.getItem('promo_seen')) return;
 
-  const titleParts = (sitePopup.title || 'PROMO').split(' ');
-  const titleHtml = titleParts.length > 1 
-    ? `${titleParts[0]} <span>${titleParts.slice(1).join(' ')}</span>`
-    : sitePopup.title;
+  const titleRaw = sitePopup.title || 'PROMO';
+  let titleHtml = titleRaw;
+  const lowerTitle = titleRaw.toLowerCase();
+  if (lowerTitle.endsWith('buy') && lowerTitle !== 'buy') {
+      const idx = lowerTitle.lastIndexOf('buy');
+      titleHtml = `${titleRaw.substring(0, idx)}<span>${titleRaw.substring(idx)}</span>`;
+  } else if (titleRaw.includes(' ')) {
+      const parts = titleRaw.split(' ');
+      titleHtml = `${parts[0]} <span>${parts.slice(1).join(' ')}</span>`;
+  }
 
-  const logoText = (sitePopup.brand || 'B').substring(0, 4);
+  const brandStr = sitePopup.brand || 'Kakobuy';
+  const brandTop = brandStr.substring(0,4).toLowerCase();
+  const brandBottom = brandStr.substring(4).charAt(0).toUpperCase() + brandStr.substring(5).toLowerCase();
 
   const container = document.getElementById('promoModalContainer');
   container.innerHTML = `
@@ -375,8 +383,9 @@ function checkPromoPopup() {
         </div>
         <div class="promo-body">
           <div class="promo-brand-row">
-            <div class="promo-logo">
-               <span style="color:var(--accent)">${logoText}</span>
+            <div class="promo-logo" style="display:flex; flex-direction:column; line-height:0.95; padding-top:2px;">
+               <span style="color:var(--accent); font-size:14px; font-weight:900; letter-spacing:-0.2px;">${brandTop}</span>
+               <span style="font-size:12px; font-weight:800; letter-spacing:-0.2px;">${brandBottom}</span>
             </div>
             <div style="display:flex; align-items:center;">
               <span class="promo-brand-name">${sitePopup.brand}</span>
