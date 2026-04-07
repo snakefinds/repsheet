@@ -157,12 +157,13 @@
   
   .promo-header {
     background: #1a1114; padding: 16px 20px;
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: center; align-items: center; position: relative;
     border-bottom: 1px solid #222;
   }
   .promo-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; font-style: italic; display: flex; align-items: center; gap: 8px;}
   .promo-title span { color: var(--accent); }
   .promo-close {
+    position: absolute; right: 20px;
     background: #222; border: none; color: #888; width: 28px; height: 28px;
     border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: background 0.2s, color 0.2s; font-size: 14px;
@@ -173,7 +174,7 @@
   .promo-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .promo-logo { 
     width: 44px; height: 44px; border-radius: 10px; background: #fff; 
-    border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; 
+    border: none; display: flex; align-items: center; justify-content: center; 
     font-weight: bold; color: #000; font-size: 11px; text-align: center; line-height: 1.1; 
   }
   .promo-brand-name { font-size: 18px; font-weight: 700; color: #fff; }
@@ -384,8 +385,8 @@ function checkPromoPopup() {
         <div class="promo-body">
           <div class="promo-brand-row">
             <div class="promo-logo" style="display:flex; flex-direction:column; line-height:0.95; padding-top:2px;">
-               <span style="color:var(--accent); font-size:14px; font-weight:900; letter-spacing:-0.2px;">${brandTop}</span>
-               <span style="font-size:12px; font-weight:800; letter-spacing:-0.2px;">${brandBottom}</span>
+               <span style="color:#ff2d6b; font-size:14px; font-weight:900; letter-spacing:-0.2px;">${brandTop}</span>
+               <span style="color:#000; font-size:12px; font-weight:800; letter-spacing:-0.2px;">${brandBottom}</span>
             </div>
             <div style="display:flex; align-items:center;">
               <span class="promo-brand-name">${sitePopup.brand}</span>
