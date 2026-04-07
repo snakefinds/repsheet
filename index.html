@@ -38,7 +38,9 @@
     height: 58px;
   }
   .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--accent); letter-spacing: 2px; text-decoration: none; }
-  .nav-links { display: flex; gap: 28px; }
+  .nav-end { display: flex; align-items: center; gap: 28px; }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-currency-select { padding: 4px 10px; font-size: 12px; margin: 0; }
   .nav-links a { color: var(--muted); font-size: 13px; text-decoration: none; letter-spacing: .5px; transition: color .2s; }
   .nav-links a:hover { color: var(--text); }
   .nav-right { display: flex; align-items: center; gap: 12px; }
@@ -194,7 +196,11 @@
   .promo-btn:active { transform: scale(0.98); }
 
   @media (max-width: 600px) {
+    nav { padding: 0 14px 0 16px; }
+    .nav-logo { font-size: 22px; letter-spacing: 1px; }
     .nav-links { display: none; }
+    .nav-end { gap: 0; justify-content: flex-end; flex: 1; min-width: 0; }
+    .nav-currency-select { font-size: 11px; padding: 6px 12px; flex-shrink: 0; }
     .hero { padding: 40px 16px 28px; }
     .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .products-section { padding: 16px 16px 40px; }
@@ -205,9 +211,11 @@
 
 <nav>
   <a class="nav-logo" href="index.html">SNAKEFINDS</a>
-  <div class="nav-links" style="align-items: center;">
-    <a href="#">How to Buy</a>
-    <select id="currencyApp" onchange="changeCurrency()" class="sort-select" style="padding: 4px 10px; font-size: 12px; margin-left: 10px;">
+  <div class="nav-end">
+    <div class="nav-links">
+      <a href="#">How to Buy</a>
+    </div>
+    <select id="currencyApp" onchange="changeCurrency()" class="sort-select nav-currency-select" aria-label="Currency">
       <option value="USD">USD ($)</option>
       <option value="EUR">EUR (€)</option>
       <option value="GBP">GBP (£)</option>

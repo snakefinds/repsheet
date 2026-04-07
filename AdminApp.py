@@ -11,6 +11,87 @@ from scraper import scrape_ikako, cache_image
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
 
+# Keys stored for each find (bulk JSON may include extra keys)
+_BULK_ITEM_KEYS = ('title', 'price', 'img', 'kakobuy', 'category', 'picksly')
+
+
+def _relax_json_trailing_commas(s: str) -> str:
+    prev = None
+    while prev != s:
+        prev = s
+        s = re.sub(r',(\s*[}\]])', r'\1', s)
+    return s
+
+
+def _parse_bulk_json_structure(raw: str):
+    """
+    Parse pasted JSON for bulk import. Returns the decoded value, or None if
+    every attempt failed.
+    """
+    s = raw.lstrip('\ufeff').strip()
+    if not s:
+        return None
+    attempts = [s, _relax_json_trailing_commas(s)]
+    if s.startswith('{') and not s.startswith('['):
+        inner = s.rstrip().rstrip(',').strip()
+        if inner.startswith('{'):
+            wrapped = '[' + inner + ']'
+            attempts.extend([wrapped, _relax_json_trailing_commas(wrapped)])
+    for a in attempts:
+        try:
+            return json.loads(a)
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+def _looks_like_product_dict(d: dict) -> bool:
+    for k in ('kakobuy', 'title', 'picksly', 'img', 'price', 'category'):
+        v = d.get(k)
+        if v is None:
+            continue
+        if isinstance(v, str):
+            if v.strip():
+                return True
+        elif v:
+            return True
+    return False
+
+
+def _extract_bulk_item_dicts(parsed) -> list[dict]:
+    """Turn a JSON document into a flat list of product dicts."""
+    if isinstance(parsed, list):
+        out = []
+        for el in parsed:
+            if not isinstance(el, dict):
+                continue
+            if isinstance(el.get('items'), list):
+                out.extend(d for d in el['items'] if isinstance(d, dict))
+            elif _looks_like_product_dict(el):
+                out.append(el)
+        return out
+    if isinstance(parsed, dict):
+        if isinstance(parsed.get('items'), list):
+            return [d for d in parsed['items'] if isinstance(d, dict)]
+        if _looks_like_product_dict(parsed):
+            return [parsed]
+    return []
+
+
+def _normalize_bulk_item(it: dict) -> dict:
+    """Keep only site fields; coerce values to trimmed strings."""
+    out = {}
+    for k in _BULK_ITEM_KEYS:
+        v = it.get(k, '')
+        if v is None:
+            out[k] = ''
+        elif isinstance(v, (dict, list)):
+            out[k] = json.dumps(v, ensure_ascii=False)
+        else:
+            out[k] = str(v).strip()
+    return out
+
+
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _get_driver():
@@ -261,8 +342,12 @@ class AdminApp:
 
         tk.Label(tab, text="Paste one Kakobuy / ikako link per line — the app fetches everything for you.",
                  font=("Arial", 10), wraplength=600, justify="left").pack(anchor="w")
-        tk.Label(tab, text="You can also paste a full JSON array [ {...}, {...} ] if you prefer.",
-                 font=("Arial", 9), fg="gray").pack(anchor="w", pady=(2, 8))
+        tk.Label(
+            tab,
+            text="Or paste JSON: a single object, an array [ {...}, {...} ], or {\"items\": [...] } "
+                 "(title, price, img, kakobuy, category, picksly). Trailing commas are tolerated.",
+            font=("Arial", 9), fg="gray", wraplength=600, justify="left",
+        ).pack(anchor="w", pady=(2, 8))
 
         self.bulk_text = tk.Text(tab, height=16, font=("Courier", 10), wrap=tk.NONE)
         self.bulk_text.pack(expand=True, fill=tk.BOTH)
@@ -470,17 +555,24 @@ class AdminApp:
             messagebox.showwarning("Empty", "Paste some URLs or JSON first.")
             return
 
-        # Try JSON array first
-        if raw.lstrip().startswith('['):
-            try:
-                items = json.loads(raw)
-                if not isinstance(items, list):
-                    raise ValueError
-                self._bulk_add_items(items)
+        first = raw.lstrip('\ufeff').lstrip()[:1]
+        if first in '{[':
+            parsed = _parse_bulk_json_structure(raw)
+            if parsed is None:
+                messagebox.showerror(
+                    "Invalid JSON",
+                    "Couldn't parse JSON. Check brackets/quotes, or use one URL per line.",
+                )
                 return
-            except Exception as e:
-                messagebox.showerror("Invalid JSON", f"Couldn't parse JSON:\n{e}")
+            items = _extract_bulk_item_dicts(parsed)
+            if not items:
+                messagebox.showerror(
+                    "No items in JSON",
+                    "Found no product objects. Include title/kakobuy/picksly (or use {\"items\": [...] }).",
+                )
                 return
+            self._bulk_add_items(items)
+            return
 
         # Otherwise treat as one URL per line
         urls = [u.strip() for u in raw.splitlines() if u.strip()]
@@ -518,6 +610,7 @@ class AdminApp:
                 continue
             it.pop('error', None)
             it.pop('final_url', None)
+            it = _normalize_bulk_item(it)
             if it.get('img'):
                 it['img'] = cache_image(it.get('img', ''))
             it['id'] = next_id
