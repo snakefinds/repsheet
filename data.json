@@ -55,24 +55,6 @@
       "id": 10
     },
     {
-      "title": "money stack",
-      "price": "35,00$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D673048545542&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/TB673048545542",
-      "id": 11
-    },
-    {
-      "title": "cdg longsleeve",
-      "price": "22,00$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D993963354076&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/TB993963354076",
-      "id": 12
-    },
-    {
       "title": "ERD Hoodie",
       "category": "Sweaters/Hoodies",
       "price": "43,44$",
@@ -100,12 +82,12 @@
       "id": 18
     },
     {
-      "title": "chrome geobaskets (grail)",
+      "title": "Chrome Hearts Geobasket",
+      "category": "Shoes",
       "price": "86,71$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7704722151&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/WD7704722151",
+      "img": "images/507d5d3821a5f58b4905a6ad.jpg",
       "id": 19
     },
     {
