@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REPFINDS — Find Your Next Rep</title>
+<title>SNAKEFINDS — Find Your Next Rep</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
   :root {
-    --accent: #ff2d6b;
-    --accent2: #ff6b2d;
+    --accent: #ff8c2d;
+    --accent2: #d9701a;
     --bg: #080808;
     --surface: #111111;
     --surface2: #181818;
@@ -56,7 +56,7 @@
     content: '';
     position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
     width: 600px; height: 300px;
-    background: radial-gradient(ellipse, rgba(255,45,107,0.18) 0%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(255,140,45,0.18) 0%, transparent 70%);
     pointer-events: none;
   }
   .hero-eyebrow { font-size: 11px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; }
@@ -106,7 +106,7 @@
     overflow: hidden; position: relative; transition: transform .2s, border-color .2s;
     display: flex; flex-direction: column;
   }
-  .card:hover { transform: translateY(-3px); border-color: rgba(255,45,107,.35); }
+  .card:hover { transform: translateY(-3px); border-color: rgba(255,140,45,0.35); }
   .card-img-wrap { position: relative; aspect-ratio: 1; overflow: hidden; background: #1a1a1a; }
   .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
   .card:hover .card-img-wrap img { transform: scale(1.04); }
@@ -132,7 +132,7 @@
     display: flex; align-items: center; justify-content: center; gap: 6px;
     text-decoration: none;
   }
-  .btn-buy:hover { background: #e0245c; }
+  .btn-buy:hover { filter: brightness(1.1); }
   .btn-buy:active { transform: scale(0.98); }
 
   .empty-state { text-align: center; padding: 60px 0; color: var(--muted); grid-column: 1/-1; }
@@ -166,7 +166,7 @@
     border-bottom: 1px solid #222;
   }
   .promo-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; font-style: italic; display: flex; align-items: center; gap: 8px;}
-  .promo-title span { color: #f94c7b; }
+  .promo-title span { color: var(--accent); }
   .promo-close {
     background: #222; border: none; color: #888; width: 28px; height: 28px;
     border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -178,11 +178,11 @@
   .promo-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .promo-logo { 
     width: 44px; height: 44px; border-radius: 10px; background: #fff; 
-    border: 2px solid #ff7700; display: flex; align-items: center; justify-content: center; 
+    border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; 
     font-weight: bold; color: #000; font-size: 11px; text-align: center; line-height: 1.1; 
   }
   .promo-brand-name { font-size: 18px; font-weight: 700; color: #fff; }
-  .promo-badge { background: #f94c7b; color: #fff; font-size: 9px; font-weight: 700; padding: 4px 6px; border-radius: 4px; letter-spacing: 1px; margin-left: 8px; }
+  .promo-badge { background: var(--accent); color: #fff; font-size: 9px; font-weight: 700; padding: 4px 6px; border-radius: 4px; letter-spacing: 1px; margin-left: 8px; }
   .promo-desc { color: #999; font-size: 12px; line-height: 1.5; margin-bottom: 20px; font-style: italic; }
   
   .promo-code-box {
@@ -199,10 +199,10 @@
   
   .promo-btn {
     display: flex; align-items: center; justify-content: center; width: 100%;
-    background: #e86383; color: #fff; text-decoration: none; padding: 14px;
-    border-radius: 10px; font-size: 14px; font-weight: 700; transition: transform 0.2s, background 0.2s;
+    background: var(--accent); color: #fff; text-decoration: none; padding: 14px;
+    border-radius: 10px; font-size: 14px; font-weight: 700; transition: transform 0.2s, filter 0.2s;
   }
-  .promo-btn:hover { background: #fa7294; }
+  .promo-btn:hover { filter: brightness(1.1); }
   .promo-btn:active { transform: scale(0.98); }
 
   @media (max-width: 600px) {
@@ -216,12 +216,16 @@
 <body>
 
 <nav>
-  <a class="nav-logo" href="index.html">REPFINDS</a>
-  <div class="nav-links">
-    <a href="#">Finds</a>
-    <a href="#">QC Images</a>
+  <a class="nav-logo" href="index.html">SNAKEFINDS</a>
+  <div class="nav-links" style="align-items: center;">
     <a href="#">How to Buy</a>
-    <a href="#">Top Picks</a>
+    <select id="currencyApp" onchange="changeCurrency()" class="sort-select" style="padding: 4px 10px; font-size: 12px; margin-left: 10px;">
+      <option value="USD">USD ($)</option>
+      <option value="EUR">EUR (€)</option>
+      <option value="GBP">GBP (£)</option>
+      <option value="CAD">CAD ($)</option>
+      <option value="AUD">AUD ($)</option>
+    </select>
   </div>
 </nav>
 
@@ -252,7 +256,7 @@
 </section>
 
 <footer>
-  <p>© 2026 REPFINDS &nbsp;·&nbsp; For educational purposes only.</p>
+  <p>© 2026 SNAKEFINDS &nbsp;·&nbsp; For educational purposes only.</p>
 </footer>
 
 <div id="promoModalContainer"></div>
@@ -266,6 +270,15 @@ let activeCat = 'All';
 let allItems = [];
 let siteTheme = {};
 let sitePopup = {};
+
+const RATES = { USD: 1, EUR: 0.92, GBP: 0.79, CAD: 1.36, AUD: 1.52 };
+const SYMBOLS = { USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
+let currentCurrency = 'USD';
+
+function changeCurrency() {
+  currentCurrency = document.getElementById('currencyApp').value;
+  renderGrid();
+}
 
 async function loadData() {
   try {
@@ -329,6 +342,9 @@ function renderGrid() {
     const imgContent = it.img
       ? `<img src="${it.img}" alt="${it.name}" onerror="this.parentNode.innerHTML='<div class=card-emoji>${CAT_EMOJI[it.cat]||'📦'}</div>'">`
       : `<div class="card-emoji">${CAT_EMOJI[it.cat]||'📦'}</div>`;
+    
+    const localPrice = (parseFloat(it.price) * RATES[currentCurrency]).toFixed(2);
+    
     return `<div class="card">
       <div class="card-img-wrap">
         ${imgContent}
@@ -337,7 +353,7 @@ function renderGrid() {
       <div class="card-body">
         <div class="card-name" title="${it.name}">${it.name}</div>
         <div class="card-cat">${it.cat}</div>
-        <div class="card-price">$${parseFloat(it.price).toFixed(2)} <span>USD</span></div>
+        <div class="card-price">${SYMBOLS[currentCurrency]}${localPrice} <span>${currentCurrency}</span></div>
       </div>
       <div class="card-footer" style="display: flex; gap: 8px;">
         <a class="btn-buy" href="${it.link}" target="_blank" rel="noopener" style="flex: 1;">🛒 Buy Now</a>
@@ -369,7 +385,7 @@ function checkPromoPopup() {
         <div class="promo-body">
           <div class="promo-brand-row">
             <div class="promo-logo">
-               <span style="color:#e86383">${logoText.substring(0,2)}</span><br>${logoText.substring(2)}
+               <span style="color:var(--accent)">${logoText.substring(0,2)}</span><br>${logoText.substring(2)}
             </div>
             <div style="display:flex; align-items:center;">
               <span class="promo-brand-name">${sitePopup.brand}</span>
