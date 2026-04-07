@@ -13,70 +13,83 @@ DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json'
 
 def scrape_url(url):
     """
-    Strategy:
-      1. Follow ikako/kakobuy short link → get final Kakobuy page URL.
-      2. Extract the source marketplace URL from the ?url= query param.
-      3. Derive the item ID → build the picks.ly URL.
-      4. Scrape picks.ly for title, image, price  (it's server-rendered & SEO-friendly).
-      5. Fallback: scrape the source marketplace page directly.
+    Strategy (in order):
+      1. Follow ikako short link → get Kakobuy page + HTML.
+      2. Extract source marketplace URL from ?url= param.
+      3. Try Kakobuy's internal REST API (returns clean JSON).
+      4. Parse __NUXT_DATA__ embedded in the Kakobuy page HTML.
+      5. Build picks.ly QC URL from item ID.
     """
-    from urllib.parse import urlparse, parse_qs, unquote, quote
+    from urllib.parse import urlparse, parse_qs, unquote, urlencode
 
     HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                       '(KHTML, like Gecko) Chrome/124.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Referer': 'https://www.google.com/',
+        'Referer': 'https://www.kakobuy.com/',
     }
+    JSON_HEADERS = {**HEADERS, 'Accept': 'application/json, text/plain, */*'}
 
-    def fetch(u, timeout=14):
+    def fetch_html(u, timeout=14):
         req = urllib.request.Request(u, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.url, resp.read().decode('utf-8', errors='ignore')
 
-    def og(prop, html):
-        """Extract an og:/product: meta tag."""
-        for pat in [
-            r'<meta\b[^>]+\bproperty=["\']' + re.escape(prop) + r'["\'][^>]+\bcontent=["\']([^"\']+)',
-            r'<meta\b[^>]+\bcontent=["\']([^"\']+)["\'][^>]+\bproperty=["\']' + re.escape(prop) + r'["\']',
-        ]:
-            m = re.search(pat, html, re.I | re.S)
-            if m:
-                return m.group(1).strip()
+    def fetch_json(u, timeout=10):
+        req = urllib.request.Request(u, headers=JSON_HEADERS)
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode('utf-8', errors='ignore'))
+
+    def all_strings(obj, acc=None):
+        """Flatten every string out of any nested JSON structure."""
+        if acc is None:
+            acc = []
+        if isinstance(obj, str):
+            acc.append(obj)
+        elif isinstance(obj, list):
+            for v in obj:
+                all_strings(v, acc)
+        elif isinstance(obj, dict):
+            for v in obj.values():
+                all_strings(v, acc)
+        return acc
+
+    CDN_RE = re.compile(
+        r'https://[^\s"\'<>]*'
+        r'(?:geilicdn\.com|alicdn\.com|weidianimg\.com|gw\.alicdn\.com|'
+        r'img\.alicdn\.com|yupoo\.com|tbcdn\.cn|oss-cn)[^\s"\'<>]*'
+        r'\.(?:jpg|jpeg|png|webp)',
+        re.I)
+
+    def best_cdn_image(strings):
+        for s in strings:
+            if CDN_RE.search(s):
+                m = CDN_RE.search(s)
+                return m.group(0).split('!')[0].split('?')[0]
         return ''
 
-    def raw_title(html):
-        m = re.search(r'<title>(.*?)</title>', html, re.S)
-        return re.sub(r'<[^>]+>', '', m.group(1)).strip() if m else ''
-
-    def best_img(html):
-        """Return the highest-quality product image we can find in the page."""
-        # 1. og:image
-        img = og('og:image', html)
-        if img:
-            return img.split('?')[0]
-        # 2. any CDN image that looks like a product photo
-        for cdn in ['geilicdn.com', 'alicdn.com', 'weidianimg.com',
-                    'gw.alicdn.com', 'img.alicdn.com', 'img1.', 'yupoo.com']:
-            m = re.search(
-                r'"(https://[^"]*' + re.escape(cdn) + r'[^"]*\.(?:jpg|jpeg|png|webp))[^"]*"',
-                html)
-            if m:
-                return m.group(1).split('?')[0]
-        return ''
+    def is_product_title(s):
+        if not s or len(s) < 4 or len(s) > 300:
+            return False
+        if s.startswith('http') or '://' in s:
+            return False
+        if any(skip in s.lower() for skip in (
+            'kakobuy', 'taobao agent', 'best agent', 'shopping cart',
+            'copyright', 'cookie', 'function(', '<!', '</', 'var ', 'window.')):
+            return False
+        return True
 
     # ── 1. Follow the short link ───────────────────────────────────────────────
-    final_url, kb_html = fetch(url)
+    final_url, kb_html = fetch_html(url)
 
     result = {'kakobuy': url, 'picksly': '', 'title': '', 'img': '', 'price': '', 'category': ''}
 
-    # ── 2. Extract the source marketplace URL ─────────────────────────────────
+    # ── 2. Extract source marketplace URL ─────────────────────────────────────
     parsed     = urlparse(final_url)
     qs         = parse_qs(parsed.query)
     source_url = unquote(qs.get('url', [''])[0])
 
-    # Nuxt.js sometimes embeds it in the HTML payload too
     if not source_url:
         m = re.search(
             r'["\']url["\']\s*:\s*["\'](https?://(?:weidian|taobao|1688|detail\.tmall)[^"\']+)',
@@ -84,75 +97,92 @@ def scrape_url(url):
         if m:
             source_url = unquote(m.group(1))
 
-    # ── 3. Build picks.ly URL from item ID ────────────────────────────────────
-    picksly_url = ''
+    # ── 3. Build picks.ly QC URL ──────────────────────────────────────────────
     if source_url:
         if 'weidian.com' in source_url:
             m = re.search(r'itemID[=\s]*(\d+)', source_url)
             if m:
-                picksly_url = f'https://picks.ly/item/WD{m.group(1)}'
+                result['picksly'] = f'https://picks.ly/item/WD{m.group(1)}'
         elif 'taobao.com' in source_url or 'tmall.com' in source_url:
             m = re.search(r'[?&]id=(\d+)', source_url)
             if m:
-                picksly_url = f'https://picks.ly/item/TB{m.group(1)}'
+                result['picksly'] = f'https://picks.ly/item/TB{m.group(1)}'
         elif '1688.com' in source_url:
             m = re.search(r'/offer/(\d+)', source_url)
             if m:
-                picksly_url = f'https://picks.ly/item/ALI{m.group(1)}'
+                result['picksly'] = f'https://picks.ly/item/ALI{m.group(1)}'
 
-    if picksly_url:
-        result['picksly'] = picksly_url
-
-    # ── 4. Scrape picks.ly for product data (primary strategy) ────────────────
-    if picksly_url:
-        try:
-            _, pl_html = fetch(picksly_url, timeout=12)
-
-            title = og('og:title', pl_html) or raw_title(pl_html)
-            # picks.ly titles often look like "Product Name | Picks" — strip suffix
-            title = re.split(r'\s*[|\-–]\s*(?:picks|picksly)', title, flags=re.I)[0].strip()
-
-            img   = best_img(pl_html)
-
-            price = og('og:price:amount', pl_html) or og('product:price:amount', pl_html)
-            if not price:
-                # picks.ly page often has price like: ¥130 or $130 or 130.00
-                m = re.search(r'[¥$€]?\s*([\d]+\.?\d*)\s*(?:USD|CNY|yuan|rmb)?', pl_html)
-                price = m.group(1) if m else ''
-
-            if title: result['title'] = title
-            if img:   result['img']   = img
-            if price: result['price'] = price
-            return result          # ← success, done
-        except Exception:
-            pass  # fall through to source page strategy
-
-    # ── 5. Fallback: scrape the source marketplace page directly ──────────────
+    # ── 4. Try Kakobuy REST API ────────────────────────────────────────────────
     if source_url:
+        for api_url in [
+            f'https://www.kakobuy.com/api/v1/item/query-item-info?url={source_url}',
+            f'https://www.kakobuy.com/api/v1/item/info?url={source_url}',
+            f'https://www.kakobuy.com/api/item?url={source_url}',
+        ]:
+            try:
+                data = fetch_json(api_url)
+                # Different API shapes — try common patterns
+                item = (data.get('data') or data.get('result') or
+                        data.get('item') or data)
+                if isinstance(item, list):
+                    item = item[0] if item else {}
+
+                title = (item.get('title') or item.get('name') or
+                         item.get('subject') or item.get('itemTitle') or '')
+                price = str(item.get('price') or item.get('priceInfo', {}).get('price', '') or
+                            item.get('itemPrice') or '')
+                imgs  = (item.get('images') or item.get('imgList') or
+                         item.get('itemImgList') or [])
+                img   = imgs[0] if isinstance(imgs, list) and imgs else \
+                        item.get('img') or item.get('image') or item.get('pic') or ''
+
+                if title:
+                    result['title'] = title
+                    if img:
+                        result['img'] = str(img).split('?')[0]
+                    if price:
+                        result['price'] = price
+                    return result   # ← API worked!
+            except Exception:
+                continue
+
+    # ── 5. Parse __NUXT_DATA__ from the Kakobuy page ──────────────────────────
+    nuxt_m = re.search(
+        r'<script[^>]+id=["\']__NUXT_DATA__["\'][^>]*>(.*?)</script>',
+        kb_html, re.S)
+    if nuxt_m:
         try:
-            _, src_html = fetch(source_url, timeout=12)
+            nuxt = json.loads(nuxt_m.group(1))
+            strings = all_strings(nuxt)
 
-            title = og('og:title', src_html) or raw_title(src_html)
-            title = title.split(' - ')[0].strip()   # strip shop name suffix
-            img   = best_img(src_html)
-            price = og('og:price:amount', src_html) or og('product:price:amount', src_html)
-            if not price:
-                m = re.search(r'"price"\s*:\s*"?([\d.]+)"?', src_html)
-                price = m.group(1) if m else ''
+            # Image: first CDN URL we find
+            if not result['img']:
+                result['img'] = best_cdn_image(strings)
 
-            if title: result['title'] = title
-            if img:   result['img']   = img
-            if price: result['price'] = price
+            # Price: a realistic product price string (1-9999, up to 2dp)
+            if not result['price']:
+                for s in strings:
+                    if re.fullmatch(r'\d{1,5}(?:\.\d{1,2})?', str(s)):
+                        val = float(s)
+                        if 0.5 < val < 9999:
+                            result['price'] = str(s)
+                            break
+
+            # Title: longest plausible product-name string
+            if not result['title']:
+                candidates = [s for s in strings if is_product_title(s)]
+                if candidates:
+                    result['title'] = max(candidates, key=len)
+
         except Exception:
             pass
 
-    # ── 6. Last resort: whatever we can scrape from the Kakobuy page HTML ─────
-    if not result['title']:
-        t = og('og:title', kb_html) or raw_title(kb_html)
-        if t and not any(x in t.lower() for x in ('taobao agent', 'kakobuy', 'best agent')):
-            result['title'] = t
+    # ── 6. Last resort: regex scan of raw Kakobuy HTML ────────────────────────
     if not result['img']:
-        result['img'] = best_img(kb_html)
+        m = CDN_RE.search(kb_html)
+        if m:
+            result['img'] = m.group(0).split('!')[0].split('?')[0]
+
     if not result['price']:
         m = re.search(r'["\']price["\']\s*:\s*["\']?([\d.]+)["\']?', kb_html)
         if m:
@@ -162,6 +192,7 @@ def scrape_url(url):
 
 
 # ── main app ─────────────────────────────────────────────────────────────────
+
 
 class AdminApp:
     def __init__(self, root):
