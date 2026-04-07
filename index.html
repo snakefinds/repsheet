@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REPFINDS — Find Your Next Rep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #ff2d6b;
+    --accent2: #ff6b2d;
+    --bg: #080808;
+    --surface: #111111;
+    --surface2: #181818;
+    --border: #232323;
+    --text: #f0f0f0;
+    --muted: #666;
+    --card-bg: #131313;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(8,8,8,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 58px;
+  }
+  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--accent); letter-spacing: 2px; text-decoration: none; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: var(--muted); font-size: 13px; text-decoration: none; letter-spacing: .5px; transition: color .2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-admin { color: var(--accent); font-size: 12px; text-decoration: none; border: 1px solid var(--accent); padding: 6px 14px; border-radius: 4px; transition: background .2s; }
+  .nav-admin:hover { background: var(--accent); color: #fff; }
+
+  /* HERO */
+  .hero {
+    padding: 60px 24px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 300px;
+    background: radial-gradient(ellipse, rgba(255,45,107,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow { font-size: 11px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; }
+  .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 8vw, 90px); line-height: .95; color: #fff; margin-bottom: 16px; }
+  .hero-title span { color: var(--accent); }
+  .hero-sub { color: var(--muted); font-size: 15px; max-width: 480px; margin: 0 auto 28px; line-height: 1.6; }
+
+  /* SEARCH */
+  .search-wrap { max-width: 560px; margin: 0 auto; position: relative; }
+  .search-wrap input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px;
+    padding: 13px 50px 13px 22px; border-radius: 50px; outline: none;
+    transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+
+  /* QUICK TAGS */
+  .quick-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 16px 24px 0; }
+  .tag { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 5px 16px; border-radius: 50px; font-size: 12px; cursor: pointer; transition: all .2s; font-weight: 500; }
+  .tag:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* CATEGORIES */
+  .cat-strip { display: flex; gap: 8px; padding: 20px 24px 0; overflow-x: auto; scrollbar-width: none; }
+  .cat-strip::-webkit-scrollbar { display: none; }
+  .cat-btn {
+    background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+    padding: 8px 22px; border-radius: 50px; font-size: 13px; font-family: 'Outfit', sans-serif;
+    cursor: pointer; white-space: nowrap; transition: all .2s; font-weight: 600; letter-spacing: .4px;
+  }
+  .cat-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cat-btn:hover:not(.active) { border-color: #555; color: var(--text); }
+
+  /* PRODUCTS */
+  .products-section { padding: 24px 24px 60px; }
+  .products-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+  .products-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1px; }
+  .products-count { color: var(--accent); }
+  .sort-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; padding: 8px 16px; border-radius: 50px; outline: none; cursor: pointer; font-weight: 500; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; position: relative; transition: transform .2s, border-color .2s;
+    display: flex; flex-direction: column;
+  }
+  .card:hover { transform: translateY(-3px); border-color: rgba(255,45,107,.35); }
+  .card-img-wrap { position: relative; aspect-ratio: 1; overflow: hidden; background: #1a1a1a; }
+  .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+  .card:hover .card-img-wrap img { transform: scale(1.04); }
+  .card-emoji { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  .card-badge {
+    position: absolute; top: 8px; left: 8px;
+    background: var(--accent); color: #fff;
+    font-size: 9px; font-weight: 600; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 3px; text-transform: uppercase;
+  }
+  .card-badge.hot { background: #ff6b2d; }
+  .card-badge.new { background: #2dff9b; color: #000; }
+  .card-body { padding: 12px 14px 8px; flex: 1; }
+  .card-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-cat { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .card-price { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--accent); letter-spacing: 1px; }
+  .card-price span { font-family: 'Outfit', sans-serif; font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 0; }
+  .card-footer { padding: 0 10px 10px; }
+  .btn-buy {
+    width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 50px;
+    padding: 9px 0; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; letter-spacing: .5px; transition: background .2s, transform .1s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    text-decoration: none;
+  }
+  .btn-buy:hover { background: #e0245c; }
+  .btn-buy:active { transform: scale(0.98); }
+
+  .empty-state { text-align: center; padding: 60px 0; color: var(--muted); grid-column: 1/-1; }
+  .empty-state .big { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* FOOTER */
+  footer { border-top: 1px solid var(--border); padding: 24px; text-align: center; color: var(--muted); font-size: 12px; }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 600px) {
+    .nav-links { display: none; }
+    .hero { padding: 40px 16px 28px; }
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .products-section { padding: 16px 16px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">REPFINDS</a>
+  <div class="nav-links">
+    <a href="#">Finds</a>
+    <a href="#">QC Images</a>
+    <a href="#">How to Buy</a>
+    <a href="#">Top Picks</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">The community rep directory</div>
+  <h1 class="hero-title">Find Your<br><span>Next Rep</span></h1>
+  <p class="hero-sub">Curated replica finds from trusted sellers. Quality checked, community approved.</p>
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="Search replicas — shoes, tees, bags..." oninput="renderGrid()" />
+    <span class="search-icon">🔍</span>
+  </div>
+</section>
+
+<div class="quick-tags" id="quickTags"></div>
+<div class="cat-strip" id="catStrip"></div>
+
+<section class="products-section">
+  <div class="products-header">
+    <div class="products-title">FINDS <span class="products-count" id="countEl"></span></div>
+    <select class="sort-select" id="sortSel" onchange="renderGrid()">
+      <option value="default">Default</option>
+      <option value="price-asc">Price: Low to High</option>
+      <option value="price-desc">Price: High to Low</option>
+      <option value="name">Name A–Z</option>
+    </select>
+  </div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<footer>
+  <p>© 2026 REPFINDS &nbsp;·&nbsp; For educational purposes only.</p>
+</footer>
+
+<script>
+const CATS = ['All','Shoes','T-Shirts','Jackets/Coats','Sweaters/Hoodies','Bags','Hats/Caps','Accessories','Other'];
+const QUICK = ['Nike','Jordan','Adidas','Supreme','Gucci','Louis Vuitton','Balenciaga','Stone Island'];
+const CAT_EMOJI = {Shoes:'👟','T-Shirts':'👕','Jackets/Coats':'🧥','Sweaters/Hoodies':'🪡',Bags:'👜','Hats/Caps':'🧢',Accessories:'💎',Other:'📦'};
+let activeCat = 'All';
+
+let allItems = [];
+let siteTheme = {};
+
+async function loadData() {
+  try {
+    const res = await fetch('./data.json');
+    if (!res.ok) throw new Error('Data fetch failed');
+    const data = await res.json();
+    allItems = data.items || [];
+    siteTheme = data.theme || {};
+    applyTheme(siteTheme);
+    buildCats();
+    renderGrid();
+  } catch (err) {
+    console.error('Error loading data', err);
+  }
+}
+
+function getItems() { return allItems; }
+function getTheme() { return siteTheme; }
+
+function applyTheme(t) {
+  const r = document.documentElement;
+  if (t.accent) r.style.setProperty('--accent', t.accent);
+  if (t.bg) r.style.setProperty('--bg', t.bg);
+  if (t.surface) r.style.setProperty('--surface', t.surface);
+  if (t.siteName) document.querySelector('.nav-logo').textContent = t.siteName;
+  if (t.tagline) document.querySelector('.hero-sub').textContent = t.tagline;
+}
+
+function buildCats() {
+  const strip = document.getElementById('catStrip');
+  strip.innerHTML = CATS.map(c => `<button class="cat-btn${activeCat===c?' active':''}" onclick="setCat('${c}')">${c}</button>`).join('');
+  const qt = document.getElementById('quickTags');
+  qt.innerHTML = QUICK.map(q => `<span class="tag" onclick="quickSearch('${q}')">${q}</span>`).join('');
+}
+
+function setCat(c) { activeCat = c; buildCats(); renderGrid(); }
+function quickSearch(q) { document.getElementById('searchInput').value = q; renderGrid(); }
+
+function renderGrid() {
+  const items = getItems();
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const sort = document.getElementById('sortSel').value;
+  let filtered = items.filter(it =>
+    (activeCat === 'All' || it.cat === activeCat) &&
+    (!q || it.name.toLowerCase().includes(q) || it.cat.toLowerCase().includes(q))
+  );
+  if (sort === 'price-asc') filtered.sort((a,b) => a.price - b.price);
+  else if (sort === 'price-desc') filtered.sort((a,b) => b.price - a.price);
+  else if (sort === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+
+  document.getElementById('countEl').textContent = `(${filtered.length})`;
+  const grid = document.getElementById('grid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="big">🔍</div><p>No finds match your search.<br>Try a different category or keyword.</p></div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(it => {
+    const badgeClass = it.badge === 'HOT' ? 'hot' : it.badge === 'NEW' ? 'new' : '';
+    const imgContent = it.img
+      ? `<img src="${it.img}" alt="${it.name}" onerror="this.parentNode.innerHTML='<div class=card-emoji>${CAT_EMOJI[it.cat]||'📦'}</div>'">`
+      : `<div class="card-emoji">${CAT_EMOJI[it.cat]||'📦'}</div>`;
+    return `<div class="card">
+      <div class="card-img-wrap">
+        ${imgContent}
+        ${it.badge ? `<div class="card-badge ${badgeClass}">${it.badge}</div>` : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-name" title="${it.name}">${it.name}</div>
+        <div class="card-cat">${it.cat}</div>
+        <div class="card-price">$${parseFloat(it.price).toFixed(2)} <span>USD</span></div>
+      </div>
+      <div class="card-footer" style="display: flex; gap: 8px;">
+        <a class="btn-buy" href="${it.link}" target="_blank" rel="noopener" style="flex: 1;">🛒 Buy Now</a>
+        ${it.qc_link ? `<a class="btn-buy" href="${it.qc_link}" target="_blank" rel="noopener" style="flex: 0; padding: 9px 16px; background: #333;" title="View QC Images">📸 QC</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+loadData();
+</script>
+</body>
+</html>
