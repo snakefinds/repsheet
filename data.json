@@ -73,21 +73,12 @@
       "id": 12
     },
     {
-      "title": "jeans",
-      "price": "45,00$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D1001682955782&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/TB1001682955782",
-      "id": 13
-    },
-    {
-      "title": "efants hoodie",
+      "title": "ERD Hoodie",
+      "category": "Sweaters/Hoodies",
       "price": "43,44$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7704729903&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/WD7704729903",
+      "img": "images/5e7ded1f94bb8cd90d8c1304.jpg",
       "id": 14
     },
     {
@@ -251,15 +242,6 @@
       "category": "",
       "picksly": "https://picks.ly/item/TB997528267312",
       "id": 32
-    },
-    {
-      "title": "chrome hearts",
-      "price": "15,94$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7572564196&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/WD7572564196",
-      "id": 33
     },
     {
       "title": "balenciaga apple hoodie",
