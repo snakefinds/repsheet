@@ -37,21 +37,21 @@
       "id": 8
     },
     {
-      "title": "money stack",
-      "price": "35,00$",
-      "img": "",
+      "title": "Money Stack",
+      "category": "Other",
+      "price": "35",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D673048545542&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/TB673048545542",
+      "img": "images/80888c3bc548739892dcf8be.jpg",
       "id": 9
     },
     {
-      "title": "cdg longsleeve",
-      "price": "22,00$",
-      "img": "",
+      "title": "Cdg Longsleeve",
+      "category": "T-Shirts",
+      "price": "20.54",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D993963354076&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/TB993963354076",
+      "img": "",
       "id": 10
     }
   ],
