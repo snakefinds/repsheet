@@ -14,6 +14,9 @@ DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json'
 # Keys stored for each find (bulk JSON may include extra keys)
 _BULK_ITEM_KEYS = ('title', 'price', 'img', 'kakobuy', 'category', 'picksly')
 
+# During URL bulk import, write data.json every N items so a crash mid-run does not lose everything.
+_BULK_FLUSH_EVERY = 8
+
 
 def _relax_json_trailing_commas(s: str) -> str:
     prev = None
@@ -355,8 +358,26 @@ class AdminApp:
             font=("Arial", 9), fg="gray", wraplength=600, justify="left",
         ).pack(anchor="w", pady=(2, 8))
 
-        self.bulk_text = tk.Text(tab, height=16, font=("Courier", 10), wrap=tk.NONE)
+        self.bulk_text = tk.Text(tab, height=14, font=("Courier", 10), wrap=tk.NONE)
         self.bulk_text.pack(expand=True, fill=tk.BOTH)
+
+        self.bulk_headless_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            tab,
+            text="Hide browser during URL import (recommended — less flashing; uses scraper headless mode)",
+            variable=self.bulk_headless_var,
+            font=("Arial", 9),
+            anchor="w",
+        ).pack(anchor="w", pady=(6, 0))
+        tk.Label(
+            tab,
+            text="Each link can take ~30–90s (page load + image cache). Items appear in the Items tab as each "
+                 "finishes — you do not need to wait for the whole list.",
+            font=("Arial", 9),
+            fg="gray",
+            wraplength=600,
+            justify="left",
+        ).pack(anchor="w", pady=(2, 0))
 
         self.bulk_progress = tk.Label(tab, text="", fg="gray", font=("Arial", 9))
         self.bulk_progress.pack(anchor="w", pady=(4, 0))
@@ -659,30 +680,78 @@ class AdminApp:
         urls = [u.strip() for u in raw.splitlines() if u.strip()]
         if not urls:
             return
-        self.bulk_progress.config(text=f"0 / {len(urls)} fetched…", fg="gray")
+        if self.bulk_headless_var.get():
+            os.environ["SNAKEFINDS_HEADLESS"] = "1"
+        else:
+            os.environ["SNAKEFINDS_HEADLESS"] = "0"
+        self._bulk_next_id = max([i.get("id", 0) for i in self.items] + [0]) + 1
+        self._bulk_error_count = 0
+        self._bulk_import_total = len(urls)
+        self.bulk_progress.config(text=f"0 / {len(urls)} — working…", fg="gray")
         self.notebook.tab(1, state=tk.DISABLED)
         threading.Thread(target=self._bulk_url_worker, args=(urls,), daemon=True).start()
 
     def _bulk_url_worker(self, urls):
-        results = []
+        total = len(urls)
         for idx, url in enumerate(urls, 1):
+            had_err = False
             try:
-                info = scrape_ikako(url)
-                results.append(info)
-                self.root.after(0, self.bulk_progress.config,
-                                {'text': f"{idx} / {len(urls)} fetched…"})
+                raw = scrape_ikako(url)
             except Exception as e:
-                results.append({'title': url, 'kakobuy': url, 'img': '', 'price': '', 'error': str(e)})
-        self.root.after(0, self._bulk_url_done, results)
+                raw = {
+                    "title": url,
+                    "kakobuy": url,
+                    "img": "",
+                    "price": "",
+                    "picksly": "",
+                    "category": "",
+                    "error": str(e),
+                }
+                had_err = True
+            d = dict(raw)
+            d.pop("error", None)
+            d.pop("final_url", None)
+            it = _normalize_bulk_item(d)
+            if it.get("img"):
+                try:
+                    it["img"] = cache_image(it["img"])
+                except Exception:
+                    pass
+            self.root.after(0, self._bulk_append_one_item, it, idx, total, had_err)
+        self.root.after(0, self._bulk_url_finished)
 
-    def _bulk_url_done(self, results):
+    def _bulk_append_one_item(self, it: dict, idx: int, total: int, had_error: bool):
+        row = dict(it)
+        row["id"] = self._bulk_next_id
+        self._bulk_next_id += 1
+        self.items.append(row)
+        if had_error:
+            self._bulk_error_count += 1
+        self.refresh_listbox()
+        self.bulk_progress.config(
+            text=f"{idx} / {total} — saved to list (open Items tab to see)",
+            fg="gray",
+        )
+        if idx % _BULK_FLUSH_EVERY == 0:
+            self._write_data()
+
+    def _bulk_url_finished(self):
         self.notebook.tab(1, state=tk.NORMAL)
-        self._bulk_add_items(results)
-        errs = [r for r in results if r.get('error')]
-        msg = f"✅ {len(results) - len(errs)} item(s) imported."
-        if errs:
-            msg += f"\n⚠ {len(errs)} URL(s) couldn't be fetched — added with blank fields."
-        self.bulk_progress.config(text=msg, fg="green")
+        total = getattr(self, "_bulk_import_total", 0)
+        errs = getattr(self, "_bulk_error_count", 0)
+        ok = total - errs
+        if self._write_data():
+            if self.use_git_var.get():
+                self.git_auto_push()
+            else:
+                msg = f"✅ {ok} item(s) imported and saved!"
+                if errs:
+                    msg += f"\n⚠ {errs} URL(s) couldn't be scraped fully — check those rows."
+                messagebox.showinfo("Done", msg)
+        self.bulk_progress.config(
+            text=f"✅ {ok} / {total} done." + (f" ({errs} with errors)" if errs else ""),
+            fg="green",
+        )
 
     def _bulk_add_items(self, items):
         next_id = max([i.get('id', 0) for i in self.items] + [0]) + 1
