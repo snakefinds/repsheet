@@ -10,42 +10,6 @@
       "img": "https://m.media-amazon.com/images/I/51ub4Zbj4cL.jpg"
     },
     {
-      "id": 2,
-      "title": "Playboi Carti Cat Tee",
-      "category": "T-Shirts",
-      "price": "12.00",
-      "kakobuy": "#",
-      "picksly": "",
-      "img": ""
-    },
-    {
-      "id": 3,
-      "title": "Supreme Box Logo Tee",
-      "category": "T-Shirts",
-      "price": "18.00",
-      "kakobuy": "#",
-      "picksly": "",
-      "img": ""
-    },
-    {
-      "id": 4,
-      "title": "Arcteryx Beanie",
-      "category": "Hats/Caps",
-      "price": "1.82",
-      "kakobuy": "#",
-      "picksly": "",
-      "img": ""
-    },
-    {
-      "id": 5,
-      "title": "Louis Vuitton Speedy Bag",
-      "category": "Bags",
-      "price": "88.00",
-      "kakobuy": "#",
-      "picksly": "",
-      "img": ""
-    },
-    {
       "title": "Supreme Windbreaker",
       "category": "",
       "price": "32.51",
@@ -55,31 +19,13 @@
       "id": 6
     },
     {
-      "kakobuy": "https://ikako.vip/46zhe",
-      "picksly": "https://picks.ly/item/TB955675858474",
-      "title": "Picks.ly - Your Go-to QC Finder",
-      "img": "https://picks.ly/og-image.jpg",
-      "price": "22",
-      "category": "",
+      "title": "Chrome Hearts Longsleeve",
+      "category": "T-Shirts",
+      "price": "10.75",
+      "kakobuy": "https://ikako.vip/yn4jr",
+      "picksly": "https://picks.ly/item/ALI925334074707",
+      "img": "https://cbu01.alicdn.com/img/ibank/O1CN01Zq3vDn2GDM5jJGVfB_!!2219001998981-0-cib.jpg_400x400q85.jpg_.webp",
       "id": 7
-    },
-    {
-      "kakobuy": "https://ikako.vip/yn4jr",
-      "picksly": "https://picks.ly/item/ALI925334074707",
-      "title": "",
-      "img": "",
-      "price": "",
-      "category": "",
-      "id": 8
-    },
-    {
-      "kakobuy": "https://ikako.vip/yn4jr",
-      "picksly": "https://picks.ly/item/ALI925334074707",
-      "title": "Picks.ly - Your Go-to QC Finder",
-      "price": "1",
-      "img": "https://picks.ly/og-image.jpg",
-      "category": "",
-      "id": 9
     }
   ],
   "theme": {
