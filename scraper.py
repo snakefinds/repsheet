@@ -57,21 +57,37 @@ def _get_driver():
     from selenium import webdriver
 
     # Try Edge first (uses Selenium Manager to locate/download driver)
+    headless = os.environ.get("SNAKEFINDS_HEADLESS", "0").strip() not in {"0", "false", "False", ""}
+
     try:
         from selenium.webdriver.edge.options import Options as EdgeOptions
 
         opts = EdgeOptions()
-        opts.add_argument("--headless=new")
-        opts.add_argument("--disable-gpu")
+        if headless:
+            opts.add_argument("--headless=new")
+            opts.add_argument("--disable-gpu")
+        opts.add_argument("--disable-blink-features=AutomationControlled")
         opts.add_argument("--window-size=1280,900")
         opts.add_argument("--lang=en-US")
+        try:
+            opts.add_experimental_option("excludeSwitches", ["enable-automation"])
+            opts.add_experimental_option("useAutomationExtension", False)
+        except Exception:
+            pass
         opts.add_argument(
             "user-agent="
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
             "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
         )
 
-        return webdriver.Edge(options=opts)
+        driver = webdriver.Edge(options=opts)
+        try:
+            driver.execute_script(
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+            )
+        except Exception:
+            pass
+        return driver
     except Exception:
         pass
 
@@ -82,8 +98,9 @@ def _get_driver():
 
     chrome_bin = shutil.which("chrome") or shutil.which("chrome.exe")
     opts = ChromeOptions()
-    opts.add_argument("--headless=new")
-    opts.add_argument("--disable-gpu")
+    if headless:
+        opts.add_argument("--headless=new")
+        opts.add_argument("--disable-gpu")
     opts.add_argument("--window-size=1280,900")
     opts.add_argument("--lang=en-US")
     if chrome_bin:
@@ -103,6 +120,41 @@ def _fetch(u: str, headers: Dict[str, str], timeout: int = 18) -> Tuple[str, str
 def _fetch_json(u: str, timeout: int = 12) -> Any:
     _, body = _fetch(u, JSON_HEADERS, timeout=timeout)
     return json.loads(body)
+
+
+def resolve_image_url(url: str) -> str:
+    """
+    Normalize/resolve image URLs.
+
+    - If `url` already points to an image, return it (stripped of query/fragment).
+    - If it's a Yupoo album/photo page, fetch and extract the first direct image URL.
+    """
+    if not url:
+        return ""
+    u = url.strip()
+
+    if re.search(r"\.(jpg|jpeg|png|webp)(?:\?|#|$)", u, re.I):
+        return u.split("?")[0].split("#")[0]
+
+    if "yupoo.com" in u:
+        try:
+            _, html = _fetch(u, HEADERS, timeout=18)
+        except Exception:
+            return u
+
+        og_img = _og(html, "og:image")
+        if og_img and re.search(r"\.(jpg|jpeg|png|webp)(?:\?|$)", og_img, re.I):
+            return og_img.split("?")[0].split("#")[0]
+
+        m = re.search(
+            r"(https?://[^\"'<>\\s]+\\.(?:jpg|jpeg|png|webp))(?:\\?[^\"'<>\\s]*)?",
+            html,
+            re.I,
+        )
+        if m:
+            return m.group(1).split("?")[0].split("#")[0]
+
+    return u
 
 
 def _og(html: str, prop: str) -> str:
@@ -369,6 +421,8 @@ def scrape_ikako(url: str) -> Dict[str, str]:
         from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.support import expected_conditions as EC
 
+        debug_keep_open = os.environ.get("SNAKEFINDS_KEEP_OPEN", "0").strip() not in {"0", "false", "False", ""}
+
         driver = _get_driver()
         try:
             driver.get(url)
@@ -379,14 +433,22 @@ def scrape_ikako(url: str) -> Dict[str, str]:
             source_url = unquote(qs.get("url", [""])[0])
             picksly = _build_picksly(source_url)
 
-            # Wait for content to render
-            wait = WebDriverWait(driver, 25)
+            # Wait for content to render (Kakobuy can be slow)
+            wait = WebDriverWait(driver, 45)
             try:
                 wait.until(
                     EC.presence_of_element_located(
-                        (By.CSS_SELECTOR, "h1, [class*='title'], [class*='price'], img")
+                        (By.CSS_SELECTOR, "h1, [class*='title'], [class*='price'], img, main")
                     )
                 )
+            except Exception:
+                pass
+
+            # Scroll a bit to trigger lazy-loaded content.
+            try:
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.35);")
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.70);")
+                driver.execute_script("window.scrollTo(0, 0);")
             except Exception:
                 pass
 
@@ -400,6 +462,9 @@ def scrape_ikako(url: str) -> Dict[str, str]:
                 "price": "",
                 "category": "",
             }
+
+            # NOTE: We intentionally do NOT navigate to picks.ly here.
+            # The previous behavior caused the Kakobuy page to flash and close before it could load.
 
             # Title
             texts = []
@@ -498,12 +563,18 @@ def scrape_ikako(url: str) -> Dict[str, str]:
                     except Exception:
                         continue
 
+            if debug_keep_open:
+                input("SNAKEFINDS_KEEP_OPEN=1: Press Enter to close browser and continue...")
+
+            if result.get("img"):
+                result["img"] = resolve_image_url(result["img"])
             return result
         finally:
-            try:
-                driver.quit()
-            except Exception:
-                pass
+            if not debug_keep_open:
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
     except Exception:
         # Fall back to non-JS scraping (may not return title/img/price for SPA pages).
         pass
@@ -547,5 +618,8 @@ def scrape_ikako(url: str) -> Dict[str, str]:
         m = CDN_RE.search(kb_html)
         if m:
             result["img"] = m.group(0).split("?")[0].split("!")[0]
+
+    if result.get("img"):
+        result["img"] = resolve_image_url(result["img"])
 
     return result

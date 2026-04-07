@@ -7,7 +7,7 @@ import tkinter as tk
 import urllib.request
 from tkinter import messagebox, ttk
 
-from scraper import scrape_ikako
+from scraper import scrape_ikako, resolve_image_url
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
 
@@ -383,7 +383,7 @@ class AdminApp:
             "price":    self.f_price.get(),
             "kakobuy":  self.f_kakobuy.get(),
             "picksly":  self.f_picksly.get(),
-            "img":      self.f_img.get(),
+            "img":      resolve_image_url(self.f_img.get()),
         }
         if self.current_id is not None:
             for i, it in enumerate(self.items):
