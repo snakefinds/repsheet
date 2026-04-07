@@ -7,7 +7,7 @@ import tkinter as tk
 import urllib.request
 from tkinter import messagebox, ttk
 
-from scraper import scrape_ikako, resolve_image_url
+from scraper import scrape_ikako, cache_image
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
 
@@ -383,7 +383,7 @@ class AdminApp:
             "price":    self.f_price.get(),
             "kakobuy":  self.f_kakobuy.get(),
             "picksly":  self.f_picksly.get(),
-            "img":      resolve_image_url(self.f_img.get()),
+            "img":      cache_image(self.f_img.get()),
         }
         if self.current_id is not None:
             for i, it in enumerate(self.items):
@@ -518,6 +518,8 @@ class AdminApp:
                 continue
             it.pop('error', None)
             it.pop('final_url', None)
+            if it.get('img'):
+                it['img'] = cache_image(it.get('img', ''))
             it['id'] = next_id
             next_id += 1
             self.items.append(it)

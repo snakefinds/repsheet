@@ -16,6 +16,8 @@ Strategy:
 
 import json
 import re
+import hashlib
+import pathlib
 import urllib.request
 from typing import Any, Dict, Tuple
 from urllib.parse import parse_qs, unquote, urlencode, urlparse
@@ -155,6 +157,69 @@ def resolve_image_url(url: str) -> str:
             return m.group(1).split("?")[0].split("#")[0]
 
     return u
+
+
+def cache_image(url: str, *, base_dir: str | None = None) -> str:
+    """
+    Download/cache a remote image into `images/` inside the site folder and return
+    a relative path (e.g. `images/<hash>.jpg`).
+
+    This avoids hotlink blocks (e.g. Yupoo) because the website will load images
+    from your own domain after you deploy.
+    """
+    u = resolve_image_url(url)
+    if not u:
+        return ""
+
+    # Already local
+    if not u.lower().startswith(("http://", "https://")):
+        return u
+
+    # Determine where to store images
+    root = base_dir or os.path.dirname(os.path.abspath(__file__))
+    images_dir = os.path.join(root, "images")
+    os.makedirs(images_dir, exist_ok=True)
+
+    # File extension
+    ext = ".jpg"
+    m = re.search(r"\.(jpg|jpeg|png|webp|gif)(?:\?|#|$)", u, re.I)
+    if m:
+        ext = "." + m.group(1).lower().replace("jpeg", "jpg")
+
+    # Stable filename based on URL
+    digest = hashlib.sha256(u.encode("utf-8")).hexdigest()[:24]
+    filename = f"{digest}{ext}"
+    abs_path = os.path.join(images_dir, filename)
+    rel_path = str(pathlib.PurePosixPath("images") / filename)
+
+    # If already cached, just return
+    if os.path.exists(abs_path) and os.path.getsize(abs_path) > 0:
+        return rel_path
+
+    # Download
+    try:
+        dl_headers = dict(HEADERS)
+        # Hotlink protection workarounds: match referer to host.
+        try:
+            host = urlparse(u).netloc
+            if host:
+                dl_headers["Referer"] = f"https://{host}/"
+        except Exception:
+            pass
+        dl_headers["Accept"] = "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"
+
+        req = urllib.request.Request(u, headers=dl_headers)
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            data = resp.read()
+        # Very small responses are often block pages; still write for debugging? skip.
+        if not data or len(data) < 200:
+            return u
+        with open(abs_path, "wb") as f:
+            f.write(data)
+        return rel_path
+    except Exception:
+        # If download fails, fall back to original URL
+        return u
 
 
 def _og(html: str, prop: str) -> str:
