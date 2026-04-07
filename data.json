@@ -1,13 +1,13 @@
 {
   "items": [
     {
-      "id": 1,
       "title": "Jordan 4s",
       "category": "Shoes",
       "price": "31.60",
       "kakobuy": "https://ikako.vip/qbwyq",
       "picksly": "https://picks.ly/item/WD7614443306",
-      "img": "https://m.media-amazon.com/images/I/51ub4Zbj4cL.jpg"
+      "img": "images/ec21c20ac34b5e25348caddd.jpg",
+      "id": 1
     },
     {
       "title": "Supreme Windbreaker",
