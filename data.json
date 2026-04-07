@@ -109,30 +109,12 @@
       "id": 22
     },
     {
-      "title": "red hoodie",
-      "price": "105,92$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7704667341&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/WD7704667341",
-      "id": 23
-    },
-    {
-      "title": "chroem slippers",
-      "price": "91,86$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7704728359&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/WD7704728359",
-      "id": 24
-    },
-    {
-      "title": "chrome hoodie",
+      "title": "Chrome Hoodie",
+      "category": "Sweaters/Hoodies",
       "price": "35,15$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7570579579&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/WD7570579579",
+      "img": "images/33172a809d7f43b6455ba8f2.jpg",
       "id": 25
     },
     {
