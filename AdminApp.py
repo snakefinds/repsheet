@@ -408,7 +408,7 @@ class AdminApp:
 
         tk.Label(
             wrap,
-            text="Landing page (index.html): hero text, CTAs, logo line, agent icons, etc. — valid JSON object.",
+            text="Landing page (index.html): heroPart1, heroPart2, heroSub, CTAs, logoText, etc. — valid JSON object.",
             font=("Arial", 9), fg="gray", wraplength=880, justify="left",
         ).pack(anchor="w")
         self.txt_landing = tk.Text(wrap, height=10, font=("Courier", 9), wrap=tk.NONE)

@@ -17,6 +17,8 @@
     --border: rgba(255, 255, 255, 0.08);
     --text: #f5f5f7;
     --muted: #9ca3af;
+    --radius-card: 18px;
+    --border-strong: rgba(255, 255, 255, 0.1);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; color-scheme: dark; }
@@ -35,15 +37,6 @@
       radial-gradient(ellipse 80% 50% at 10% 20%, rgba(255, 61, 140, 0.12), transparent),
       radial-gradient(ellipse 60% 40% at 90% 60%, rgba(255, 107, 74, 0.08), transparent);
   }
-  .bg-shape {
-    position: fixed; border-radius: 24px; opacity: 0.15;
-    border: 1px solid rgba(255, 61, 140, 0.4);
-    transform: rotate(-12deg);
-    pointer-events: none; z-index: 0;
-  }
-  .bg-shape:nth-child(1) { width: 120px; height: 120px; top: 15%; left: 8%; filter: blur(1px); }
-  .bg-shape:nth-child(2) { width: 80px; height: 80px; top: 55%; left: 3%; opacity: 0.1; }
-  .bg-shape:nth-child(3) { width: 100px; height: 100px; bottom: 20%; right: 12%; transform: rotate(8deg); }
 
   .side-brand {
     position: fixed; right: 0; top: 50%; transform: translateY(-50%) rotate(-90deg);
@@ -55,35 +48,29 @@
 
   header.land-header {
     position: relative; z-index: 10;
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
     padding: 20px clamp(16px, 4vw, 40px);
     max-width: 1320px; margin: 0 auto;
   }
   .land-logo {
     font-family: 'Montserrat', sans-serif; font-weight: 800; font-style: italic;
     font-size: clamp(18px, 2.5vw, 24px); color: var(--accent);
-    text-decoration: none; letter-spacing: -0.02em;
+    text-decoration: none; letter-spacing: -0.02em; flex-shrink: 0;
   }
-  .nav-skew-wrap {
-    transform: skewX(-8deg);
-    background: linear-gradient(135deg, var(--accent) 0%, #ff6b9d 100%);
-    padding: 10px 28px; border-radius: 4px;
-    box-shadow: 0 8px 32px rgba(255, 61, 140, 0.35);
+  .land-nav-desktop {
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+    gap: clamp(12px, 2vw, 24px); flex: 1; min-width: 0;
   }
-  .nav-skew-inner {
-    transform: skewX(8deg);
-    display: flex; gap: clamp(8px, 1.5vw, 22px); flex-wrap: wrap; align-items: center; justify-content: center;
-  }
-  .nav-skew-inner a {
-    color: #0a0a0a; font-weight: 700; font-size: clamp(9px, 1.1vw, 11px);
-    text-decoration: none; text-transform: uppercase; letter-spacing: 0.06em;
+  .land-nav-desktop a {
+    color: var(--muted); font-weight: 600; font-size: 12px;
+    text-decoration: none; text-transform: uppercase; letter-spacing: 0.08em;
     white-space: nowrap;
   }
-  .nav-skew-inner a:hover { opacity: 0.75; }
-  .nav-skew-inner a.active { text-decoration: underline; text-underline-offset: 3px; }
+  .land-nav-desktop a:hover { color: var(--text); }
+  .land-nav-desktop a.active { color: var(--accent); }
 
   .land-burger {
-    display: none; width: 48px; height: 48px; border-radius: 12px;
+    display: none; width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
     border: 1px solid var(--border); background: var(--surface2); color: var(--text);
     font-size: 20px; cursor: pointer;
   }
@@ -98,35 +85,27 @@
   }
 
   @media (max-width: 1024px) {
-    .nav-skew-wrap { display: none; }
+    .land-nav-desktop { display: none; }
     .land-burger { display: flex; align-items: center; justify-content: center; }
   }
 
   .land-hero {
     position: relative; z-index: 5;
-    max-width: 1320px; margin: 0 auto;
-    padding: clamp(32px, 6vw, 80px) clamp(16px, 4vw, 40px) 80px;
-    display: grid; grid-template-columns: 1fr; gap: 40px;
-    align-items: center;
+    max-width: 720px; margin: 0 auto;
+    padding: clamp(40px, 8vw, 100px) clamp(16px, 4vw, 40px) 80px;
+    text-align: center;
   }
-  @media (min-width: 960px) {
-    .land-hero { grid-template-columns: 1.1fr 0.9fr; }
-  }
-  .land-hero-copy { max-width: 640px; }
-  .land-hero-accent {
+  .land-hero-title {
     font-family: 'Montserrat', sans-serif; font-weight: 800;
-    font-size: clamp(40px, 7vw, 72px); line-height: 1.05; color: var(--accent);
-    margin-bottom: 4px;
+    font-size: clamp(36px, 8vw, 64px);
+    line-height: 1.08; color: #fff; margin-bottom: 20px;
   }
-  .land-hero-rest {
-    font-family: 'Montserrat', sans-serif; font-weight: 700;
-    font-size: clamp(28px, 5vw, 52px); line-height: 1.1; color: #fff;
-    margin-bottom: 24px;
-  }
+  .land-hero-title .accent { color: var(--accent); }
   .land-hero-sub {
     color: var(--muted); font-size: clamp(14px, 1.8vw, 17px); line-height: 1.7; margin-bottom: 32px;
+    max-width: 520px; margin-left: auto; margin-right: auto;
   }
-  .land-cta-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 28px; }
+  .land-cta-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; }
   .btn-pink {
     display: inline-flex; align-items: center; justify-content: center;
     padding: 14px 28px; border-radius: 999px; border: none; cursor: pointer;
@@ -143,68 +122,196 @@
     background: #fff; color: #0a0a0a; text-decoration: none; border: none; cursor: pointer;
   }
   .btn-white:hover { opacity: 0.92; }
-  .agent-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  .agent-row span { font-size: 12px; color: var(--muted); margin-right: 6px; }
-  .agent-icon {
-    width: 40px; height: 40px; border-radius: 50%; background: var(--surface2);
-    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .land-hero-visual {
-    position: relative; min-height: 200px;
-    border-radius: 24px; border: 1px solid var(--border);
-    background: linear-gradient(160deg, var(--surface2) 0%, var(--surface) 100%);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-  }
-  .land-hero-visual-inner {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-size: clamp(48px, 10vw, 100px); opacity: 0.25;
-  }
 
   footer.land-footer {
     position: relative; z-index: 5; text-align: center; padding: 32px 16px 48px;
     color: var(--muted); font-size: 13px; border-top: 1px solid var(--border);
   }
+
+  /* Promo modal (same behavior as finds page) */
+  .promo-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+    z-index: 9999; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 20px;
+  }
+  .promo-modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .promo-modal {
+    background: linear-gradient(180deg, #141414 0%, #0f0f0f 100%);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-card);
+    width: 100%; max-width: 400px; overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    transform: translateY(20px) scale(0.95); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .promo-modal-overlay.active .promo-modal { transform: translateY(0) scale(1); }
+  .promo-header {
+    background: #1a1114; padding: 16px 20px;
+    display: flex; justify-content: center; align-items: center; position: relative;
+    border-bottom: 1px solid #222;
+  }
+  .promo-title {
+    font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 800; font-style: italic;
+    color: #fff; display: flex; align-items: center; gap: 8px;
+  }
+  .promo-title span { color: var(--accent); }
+  .promo-close {
+    position: absolute; right: 20px;
+    background: #222; border: none; color: #888; width: 28px; height: 28px;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, color 0.2s; font-size: 14px;
+  }
+  .promo-close:hover { background: #333; color: #fff; }
+  .promo-body { padding: 24px 20px; }
+  .promo-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .promo-logo {
+    width: 44px; height: 44px; border-radius: 10px; background: #fff;
+    border: none; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; color: #000; font-size: 11px; text-align: center; line-height: 1.1;
+  }
+  .promo-brand-name { font-size: 18px; font-weight: 700; color: #fff; }
+  .promo-badge {
+    background: var(--accent); color: #fff; font-size: 9px; font-weight: 700;
+    padding: 4px 6px; border-radius: 4px; letter-spacing: 1px; margin-left: 8px;
+  }
+  .promo-desc { color: #999; font-size: 12px; line-height: 1.5; margin-bottom: 20px; font-style: italic; }
+  .promo-code-box {
+    background: #080808; border: 1px solid #222; border-radius: 12px; padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+  }
+  .promo-code-label { font-size: 10px; color: #666; font-weight: 700; margin-bottom: 4px; letter-spacing: 1px; text-transform: uppercase; }
+  .promo-code-val { font-size: 18px; font-weight: 700; color: #fff; }
+  .promo-copy {
+    background: transparent; border: none; color: #888; cursor: pointer; padding: 6px;
+    transition: color 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .promo-copy:hover { color: #fff; }
+  .promo-btn {
+    display: flex; align-items: center; justify-content: center; width: 100%;
+    background: var(--accent); color: #fff; text-decoration: none; padding: 14px;
+    border-radius: 10px; font-size: 14px; font-weight: 700; transition: transform 0.2s, filter 0.2s;
+  }
+  .promo-btn:hover { filter: brightness(1.1); }
+  .promo-btn:active { transform: scale(0.98); }
 </style>
 </head>
 <body>
 <div class="bg-blobs"></div>
-<div class="bg-shape"></div><div class="bg-shape"></div><div class="bg-shape"></div>
 <div class="side-brand" id="sideBrandEl">SNAKEFINDS</div>
 
 <header class="land-header">
   <a class="land-logo" href="index.html" id="landLogoText">SNAKEFINDS</a>
-  <div class="nav-skew-wrap" aria-label="Main navigation">
-    <nav class="nav-skew-inner" id="navSkew"></nav>
-  </div>
+  <nav class="land-nav-desktop" id="navDesktop" aria-label="Main navigation"></nav>
   <button type="button" class="land-burger" id="landBurger" aria-label="Menu" aria-expanded="false">☰</button>
 </header>
 <nav class="land-drawer" id="landDrawer" aria-hidden="true"></nav>
 
 <main class="land-hero">
-  <div class="land-hero-copy">
-    <h1>
-      <div class="land-hero-accent" id="landHeroAccent">Discover.</div>
-      <div class="land-hero-rest" id="landHeroRest">Quality Replicas Without the Scams</div>
-    </h1>
-    <p class="land-hero-sub" id="landHeroSub">Curated finds and guides from trusted community sources.</p>
-    <div class="land-cta-row">
-      <a class="btn-pink" id="landCta1" href="finds.html">Browse</a>
-      <a class="btn-white" id="landCta2" href="#">Learn How to Buy</a>
-    </div>
-    <div class="agent-row" id="agentRow">
-      <span>Agents</span>
-    </div>
-  </div>
-  <div class="land-hero-visual">
-    <div class="land-hero-visual-inner">✦</div>
+  <h1 class="land-hero-title">
+    <span id="landHeroPart1">Find your</span> <span class="accent" id="landHeroPart2">next buy</span>
+  </h1>
+  <p class="land-hero-sub" id="landHeroSub">Curated finds and guides from trusted community sources.</p>
+  <div class="land-cta-row">
+    <a class="btn-pink" id="landCta1" href="finds.html">Browse</a>
+    <a class="btn-white" id="landCta2" href="#">Learn How to Buy</a>
   </div>
 </main>
 
 <footer class="land-footer" id="landFooter">© 2026 · For educational purposes only.</footer>
 
+<div id="promoModalContainer"></div>
+
 <script src="site-shell.js"></script>
 <script>
+function checkPromoPopup(sitePopup) {
+  if (!sitePopup || !sitePopup.enabled) return;
+  if (sessionStorage.getItem('promo_seen')) return;
+
+  const titleRaw = sitePopup.title || 'PROMO';
+  let titleHtml = titleRaw;
+  const lowerTitle = titleRaw.toLowerCase();
+  if (lowerTitle.endsWith('buy') && lowerTitle !== 'buy') {
+    const idx = lowerTitle.lastIndexOf('buy');
+    titleHtml = titleRaw.substring(0, idx) + '<span>' + titleRaw.substring(idx) + '</span>';
+  } else if (titleRaw.includes(' ')) {
+    const parts = titleRaw.split(' ');
+    titleHtml = parts[0] + ' <span>' + parts.slice(1).join(' ') + '</span>';
+  }
+
+  const brandStr = sitePopup.brand || 'Kakobuy';
+  const brandTop = brandStr.substring(0, 4).toLowerCase();
+  const brandBottom = brandStr.substring(4).charAt(0).toUpperCase() + brandStr.substring(5).toLowerCase();
+
+  const container = document.getElementById('promoModalContainer');
+  container.innerHTML = `
+    <div class="promo-modal-overlay" id="promoOverlay" onclick="closePromoFromOutside(event)">
+      <div class="promo-modal">
+        <div class="promo-header">
+          <div class="promo-title">⚡ ${titleHtml}</div>
+          <button type="button" class="promo-close" onclick="closePromo()">✕</button>
+        </div>
+        <div class="promo-body">
+          <div class="promo-brand-row">
+            <div class="promo-logo" style="display:flex;flex-direction:column;line-height:0.95;padding-top:2px;">
+              <span style="color:#ff2d6b;font-size:14px;font-weight:900;letter-spacing:-0.2px;">${brandTop}</span>
+              <span style="color:#000;font-size:12px;font-weight:800;letter-spacing:-0.2px;">${brandBottom}</span>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <span class="promo-brand-name">${sitePopup.brand}</span>
+              <span class="promo-badge">${sitePopup.badge}</span>
+            </div>
+          </div>
+          <div class="promo-desc">${sitePopup.desc}</div>
+          <div class="promo-code-box">
+            <div>
+              <div class="promo-code-label">CODE</div>
+              <div class="promo-code-val" id="promoCodeVal">${sitePopup.code}</div>
+            </div>
+            <button type="button" class="promo-copy" onclick="copyPromo()" title="Copy Code">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+          <a href="${sitePopup.link}" target="_blank" rel="noopener" class="promo-btn">
+            ${sitePopup.btn_text} &nbsp;
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          </a>
+        </div>
+      </div>
+    </div>`;
+  setTimeout(function () {
+    const el = document.getElementById('promoOverlay');
+    if (el) el.classList.add('active');
+  }, 100);
+}
+
+function closePromoFromOutside(e) {
+  if (e.target.id === 'promoOverlay') closePromo();
+}
+
+function closePromo() {
+  const overlay = document.getElementById('promoOverlay');
+  if (overlay) overlay.classList.remove('active');
+  sessionStorage.setItem('promo_seen', 'true');
+  setTimeout(function () {
+    const c = document.getElementById('promoModalContainer');
+    if (c) c.innerHTML = '';
+  }, 400);
+}
+
+function copyPromo() {
+  const el = document.getElementById('promoCodeVal');
+  if (!el) return;
+  const code = el.innerText;
+  navigator.clipboard.writeText(code).then(function () {
+    const btn = document.querySelector('.promo-copy');
+    if (!btn) return;
+    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2dff9b" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    setTimeout(function () {
+      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+    }, 2000);
+  });
+}
+
 (async function () {
   try {
     const data = await SiteShell.loadData();
@@ -225,8 +332,8 @@
     document.getElementById('landLogoText').textContent = L.logoText || (site.toUpperCase() + (L.logoSuffix || ''));
     document.getElementById('sideBrandEl').textContent = (L.sideBrand || site).toUpperCase().replace(/\s/g, '');
 
-    if (L.heroAccent != null) document.getElementById('landHeroAccent').textContent = L.heroAccent;
-    if (L.heroRest != null) document.getElementById('landHeroRest').textContent = L.heroRest;
+    if (L.heroPart1 != null) document.getElementById('landHeroPart1').textContent = L.heroPart1;
+    if (L.heroPart2 != null) document.getElementById('landHeroPart2').textContent = L.heroPart2;
     if (L.heroSub != null) document.getElementById('landHeroSub').textContent = L.heroSub;
     if (L.ctaPrimary != null) document.getElementById('landCta1').textContent = L.ctaPrimary;
     if (L.ctaPrimaryHref != null) document.getElementById('landCta1').href = L.ctaPrimaryHref;
@@ -235,37 +342,32 @@
     if (data.pages && data.pages.footer != null) document.getElementById('landFooter').textContent = data.pages.footer;
 
     const nav = data.nav || [];
-    const skew = document.getElementById('navSkew');
+    const desk = document.getElementById('navDesktop');
     const drawer = document.getElementById('landDrawer');
     const file = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
-    skew.innerHTML = nav.map((item) => {
+    desk.innerHTML = nav.map(function (item) {
       const href = String(item.href || '#');
       const safeH = href.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
       const label = SiteShell.esc(item.label);
       const hFile = href.split('/').pop().toLowerCase() || 'index.html';
       const active = file === hFile ? 'active' : '';
-      return `<a href="${safeH}" class="${active}">${label}</a>`;
+      return '<a href="' + safeH + '" class="' + active + '">' + label + '</a>';
     }).join('');
-    drawer.innerHTML = nav.map((item) => {
+    drawer.innerHTML = nav.map(function (item) {
       const href = String(item.href || '#');
       const safeH = href.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-      return `<a href="${safeH}">${SiteShell.esc(item.label)}</a>`;
+      return '<a href="' + safeH + '">' + SiteShell.esc(item.label) + '</a>';
     }).join('');
 
-    const agents = (L.agentIcons || '🐼,🔗,📦,🔥,💎,✨').split(',').map((s) => s.trim()).filter(Boolean);
-    const row = document.getElementById('agentRow');
-    row.innerHTML = `<span>${SiteShell.esc(L.agentsLabel || 'Agents')}</span>` +
-      agents.map((ic) => `<span class="agent-icon">${ic}</span>`).join('');
-
     const burger = document.getElementById('landBurger');
-    burger.addEventListener('click', () => {
+    burger.addEventListener('click', function () {
       drawer.classList.toggle('open');
       const o = drawer.classList.contains('open');
       burger.setAttribute('aria-expanded', o ? 'true' : 'false');
       drawer.setAttribute('aria-hidden', o ? 'false' : 'true');
     });
-    drawer.querySelectorAll('a').forEach((a) => {
-      a.addEventListener('click', () => {
+    drawer.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () {
         drawer.classList.remove('open');
         burger.setAttribute('aria-expanded', 'false');
         drawer.setAttribute('aria-hidden', 'true');
@@ -273,6 +375,7 @@
     });
 
     document.title = (L.pageTitle || site) + ' — Home';
+    checkPromoPopup(data.popup || {});
   } catch (e) {
     console.error(e);
   }
