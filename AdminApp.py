@@ -12,37 +12,122 @@ DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json'
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def scrape_url(url):
-    """Follow redirects, parse og: meta tags -> return dict or raise."""
-    req = urllib.request.Request(url, headers={
+    """
+    1. Follow ikako/kakobuy redirect → grab final Kakobuy page URL.
+    2. Extract the embedded source marketplace URL (Weidian / Taobao / 1688).
+    3. Scrape that source page for real og:title / og:image / og:price:amount.
+    4. Auto-build picks.ly QC URL from item ID.
+    """
+    from urllib.parse import urlparse, parse_qs, unquote
+
+    HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                       '(KHTML, like Gecko) Chrome/124.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
-    })
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        final_url = resp.url
-        html = resp.read().decode('utf-8', errors='ignore')
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    }
 
-    def meta(prop):
-        # matches  property="og:title" content="..."  in any order
+    def fetch(u, timeout=12):
+        r = urllib.request.Request(u, headers=HEADERS)
+        with urllib.request.urlopen(r, timeout=timeout) as resp:
+            return resp.url, resp.read().decode('utf-8', errors='ignore')
+
+    def og(prop, html):
+        for pat in [
+            r'<meta[^>]+property=["\']' + re.escape(prop) + r'["\'][^>]+content=["\']([^"\']+)',
+            r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']' + re.escape(prop) + r'["\']',
+        ]:
+            m = re.search(pat, html, re.I)
+            if m:
+                return m.group(1).strip()
+        return ''
+
+    def page_title(html):
+        m = re.search(r'<title>(.*?)</title>', html, re.S)
+        return re.sub(r'<[^>]+>', '', m.group(1)).strip() if m else ''
+
+    # ── Step 1: follow the short link ──────────────────────────────────────────
+    final_url, kb_html = fetch(url)
+
+    result = {
+        'kakobuy':  url,
+        'picksly':  '',
+        'title':    '',
+        'img':      '',
+        'price':    '',
+        'final_url': final_url,
+    }
+
+    # ── Step 2: pull the source marketplace URL out of the Kakobuy page URL ───
+    parsed    = urlparse(final_url)
+    qs_params = parse_qs(parsed.query)
+    source_url = unquote(qs_params.get('url', [''])[0])
+
+    # Also try to find it embedded in the HTML (Nuxt.js sometimes embeds it)
+    if not source_url:
+        m = re.search(r'"url"\s*:\s*"(https?://(?:weidian|taobao|1688|detail\.tmall)[^"]+)"', kb_html)
+        if m:
+            source_url = unquote(m.group(1))
+
+    # ── Step 3: build picks.ly URL from item ID ────────────────────────────────
+    if source_url:
+        if 'weidian.com' in source_url:
+            m = re.search(r'itemID[=\s]*(\d+)', source_url)
+            if m:
+                result['picksly'] = f'https://picks.ly/item/WD{m.group(1)}'
+        elif 'taobao.com' in source_url or 'tmall.com' in source_url:
+            m = re.search(r'[?&]id=(\d+)', source_url)
+            if m:
+                result['picksly'] = f'https://picks.ly/item/TB{m.group(1)}'
+        elif '1688.com' in source_url:
+            m = re.search(r'/offer/(\d+)', source_url)
+            if m:
+                result['picksly'] = f'https://picks.ly/item/ALI{m.group(1)}'
+
+    # ── Step 4: scrape the source marketplace page (Weidian serves og: tags) ──
+    if source_url:
+        try:
+            _, src_html = fetch(source_url, timeout=10)
+            title = og('og:title', src_html) or page_title(src_html)
+            img   = og('og:image', src_html)
+            price = og('og:price:amount', src_html) or og('product:price:amount', src_html)
+
+            if not price:
+                m = re.search(r'"price"\s*:\s*"?([\d.]+)"?', src_html)
+                price = m.group(1) if m else ''
+
+            # clean up Weidian titles that repeat the shop name
+            if title:
+                result['title'] = title.split(' - ')[0].strip()
+            if img:
+                result['img'] = img.split('?')[0]  # drop resize params
+            if price:
+                result['price'] = price
+        except Exception:
+            pass  # fall through to Kakobuy-page fallback
+
+    # ── Step 5: fallback — try to pull data from the Kakobuy page itself ───────
+    if not result['title']:
+        t = og('og:title', kb_html) or page_title(kb_html)
+        # Kakobuy generic titles contain "Taobao Agent" — skip them
+        if t and 'taobao agent' not in t.lower() and 'kakobuy' not in t.lower():
+            result['title'] = t
+
+    if not result['img']:
+        # look for CDN thumbnail URLs embedded in the Kakobuy page JSON blobs
         m = re.search(
-            r'<meta[^>]+property=["\']' + re.escape(prop) + r'["\'][^>]+content=["\']([^"\']+)["\']',
-            html, re.I)
-        if not m:
-            m = re.search(
-                r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']' + re.escape(prop) + r'["\']',
-                html, re.I)
-        return m.group(1).strip() if m else ''
+            r'"(https://[^"]*(?:geilicdn\.com|alicdn\.com|weidianimg\.com)[^"'
+            r']*\.(?:jpg|jpeg|png|webp)(?:\?[^"]{0,80})?)"',
+            kb_html)
+        if m:
+            result['img'] = m.group(1).split('!')[0].split('?')[0]
 
-    title = meta('og:title') or re.sub(r'<[^>]+>', '', (re.search(r'<title>(.*?)</title>', html, re.S) or type('', (), {'group': lambda *a: ''})()).group(1)).strip()
-    image = meta('og:image')
-    price = meta('og:price:amount') or meta('product:price:amount')
+    if not result['price']:
+        m = re.search(r'["\']price["\']:\s*["\']?([\d.]+)["\']?', kb_html)
+        if m:
+            result['price'] = m.group(1)
 
-    # Kakobuy sometimes puts price in JSON-LD
-    if not price:
-        m = re.search(r'"price"\s*:\s*"?([\d.]+)"?', html)
-        price = m.group(1) if m else ''
-
-    return {'title': title, 'img': image, 'price': price, 'kakobuy': url, 'final_url': final_url}
+    return result
 
 
 # ── main app ─────────────────────────────────────────────────────────────────
@@ -308,8 +393,18 @@ class AdminApp:
             self.f_img.set(info['img'])
         if info.get('price'):
             self.f_price.set(info['price'])
+        if info.get('picksly'):
+            self.f_picksly.set(info['picksly'])
         self.f_kakobuy.set(info.get('kakobuy', self.f_url.get().strip()))
-        self.status_label.config(text="✅ Done!", fg="green")
+        fetched = []
+        if info.get('title'): fetched.append('title')
+        if info.get('img'):   fetched.append('img')
+        if info.get('price'): fetched.append('price')
+        if info.get('picksly'): fetched.append('QC link')
+        self.status_label.config(
+            text=f"✅ Got: {', '.join(fetched)}" if fetched else "⚠ Nothing found — fill manually",
+            fg="green" if fetched else "orange"
+        )
 
     def _autofill_error(self, msg):
         self.autofill_btn.config(state=tk.NORMAL)
