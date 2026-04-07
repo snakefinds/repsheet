@@ -19,6 +19,8 @@ import re
 import urllib.request
 from typing import Any, Dict, Tuple
 from urllib.parse import parse_qs, unquote, urlencode, urlparse
+import os
+import shutil
 
 
 HEADERS: Dict[str, str] = {
@@ -33,12 +35,61 @@ HEADERS: Dict[str, str] = {
 JSON_HEADERS: Dict[str, str] = {**HEADERS, "Accept": "application/json, text/plain, */*"}
 
 CDN_RE = re.compile(
-    r'https://[^\s"\'<>]*'
+    r"https?://[^\s\"'<>]*?"
     r"(?:geilicdn\.com|alicdn\.com|weidianimg\.com|gw\.alicdn\.com|img\.alicdn\.com|"
-    r"yupoo\.com|tbcdn\.cn|oss-cn|alicdn\.net)[^\s\"'<>]*"
-    r"\.(?:jpg|jpeg|png|webp)",
+    r"yupoo\.com|tbcdn\.cn|oss-cn|alicdn\.net|media-amazon\.com|goat\.com|"
+    r"imgur\.com|discordapp\.(?:com|net)|pinimg\.com|cloudinary\.com|reddit\.com|"
+    r"ibb\.co|fbcdn\.net|googleusercontent\.com|upic\.me|imgbb\.com|postimg\.cc)[^\s\"'<>]*?"
+    r"\.(?:jpg|jpeg|png|webp|gif)",
     re.I,
 )
+
+IMAGE_EXT_RE = re.compile(r"\.(?:jpg|jpeg|png|webp|gif)(?:\?|$)", re.I)
+
+
+def _get_driver():
+    """
+    Headless browser for JS-rendered pages.
+
+    Prefers Microsoft Edge (usually installed on Windows) because Chrome may not be present.
+    Falls back to Chrome if available.
+    """
+    from selenium import webdriver
+
+    # Try Edge first (uses Selenium Manager to locate/download driver)
+    try:
+        from selenium.webdriver.edge.options import Options as EdgeOptions
+
+        opts = EdgeOptions()
+        opts.add_argument("--headless=new")
+        opts.add_argument("--disable-gpu")
+        opts.add_argument("--window-size=1280,900")
+        opts.add_argument("--lang=en-US")
+        opts.add_argument(
+            "user-agent="
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        )
+
+        return webdriver.Edge(options=opts)
+    except Exception:
+        pass
+
+    # Fall back to Chrome if present
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from selenium.webdriver.chrome.service import Service as ChromeService
+    from webdriver_manager.chrome import ChromeDriverManager
+
+    chrome_bin = shutil.which("chrome") or shutil.which("chrome.exe")
+    opts = ChromeOptions()
+    opts.add_argument("--headless=new")
+    opts.add_argument("--disable-gpu")
+    opts.add_argument("--window-size=1280,900")
+    opts.add_argument("--lang=en-US")
+    if chrome_bin:
+        opts.binary_location = chrome_bin
+    svc = ChromeService(ChromeDriverManager().install())
+    return webdriver.Chrome(service=svc, options=opts)
 
 
 def _fetch(u: str, headers: Dict[str, str], timeout: int = 18) -> Tuple[str, str]:
@@ -158,18 +209,134 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
     except Exception:
         return {}
 
+    def parse_next_data() -> Dict[str, str]:
+        # Prefer regex, but fall back to string slicing (more robust against minification).
+        payload = ""
+        m = re.search(
+            r'<script[^>]+id=["\']__NEXT_DATA__["\'][^>]*>(.*?)</script>',
+            html,
+            re.I | re.S,
+        )
+        if m:
+            payload = m.group(1)
+        else:
+            marker = 'id="__NEXT_DATA__"'
+            idx = html.find(marker)
+            if idx != -1:
+                gt = html.find(">", idx)
+                end = html.find("</script>", gt + 1) if gt != -1 else -1
+                if gt != -1 and end != -1:
+                    payload = html[gt + 1 : end]
+
+        if not payload:
+            return {}
+
+        try:
+            data = json.loads(payload)
+        except Exception:
+            return {}
+
+        # Flatten strings and pick best candidates (more resilient to shape changes).
+        strings = []
+
+        def flatten(o: Any) -> None:
+            if isinstance(o, str):
+                strings.append(o)
+            elif isinstance(o, dict):
+                for v in o.values():
+                    flatten(v)
+            elif isinstance(o, list):
+                for v in o:
+                    flatten(v)
+
+        flatten(data)
+        if not strings:
+            return {}
+
+        # Image: first plausible image URL that isn't the generic OG image.
+        img_url = ""
+        for s in strings:
+            if isinstance(s, str) and s.startswith("http") and re.search(r"\.(?:jpg|jpeg|png|webp)(?:\?|$)", s, re.I):
+                if "og-image.jpg" in s:
+                    continue
+                img_url = s.split("?")[0].split("!")[0]
+                break
+
+        # Price: first realistic number, or USD string patterns.
+        price_val = ""
+        for s in strings:
+            if isinstance(s, str) and re.fullmatch(r"\d{1,5}(?:\.\d{1,2})?", s):
+                try:
+                    v = float(s)
+                except Exception:
+                    continue
+                if 0.5 < v < 9999:
+                    price_val = s
+                    break
+
+        # Title: longest "human" string that isn't generic.
+        title_val = ""
+        for s in strings:
+            if not isinstance(s, str):
+                continue
+            t = s.strip()
+            if len(t) < 6 or len(t) > 250:
+                continue
+            low = t.lower()
+            if low.startswith("picks.ly") or "your go-to qc finder" in low:
+                continue
+            if "http://" in low or "https://" in low:
+                continue
+            # heuristic: title-like strings usually have spaces and letters
+            if sum(ch.isalpha() for ch in t) < 4:
+                continue
+            if len(t) > len(title_val):
+                title_val = t
+
+        out: Dict[str, str] = {}
+        if title_val:
+            out["title"] = title_val
+        if img_url:
+            out["img"] = img_url
+        if price_val:
+            out["price"] = price_val
+        return out
+
+    # First try to parse real item data from Next.js payload.
+    next_data = parse_next_data()
+    if next_data:
+        return next_data
+
+    # Try OG tags first (often generic on picks.ly).
     title = _og(html, "og:title")
     img = _og(html, "og:image")
     price = _og(html, "product:price:amount") or _og(html, "og:price:amount")
 
-    # Reject generic placeholders (what you hit in the screenshot)
     if title and title.strip().lower().startswith("picks.ly"):
         title = ""
     if img and img.rstrip("/").endswith("/og-image.jpg"):
         img = ""
 
+    # If OG tags were generic/missing, try to regex real values out of the HTML
+    # (Next.js pages often inline JSON).
+    if not title:
+        m = re.search(r'"title"\s*:\s*"([^"]{6,250})"', html)
+        if m:
+            t = m.group(1).strip()
+            low = t.lower()
+            if not low.startswith("picks.ly") and "your go-to qc finder" not in low:
+                title = t
+
+    if not img:
+        m = re.search(
+            r'(https?://[^"\'<>\s]+?\.(?:jpg|jpeg|png|webp))(?:\?[^"\'<>\s]*)?',
+            html,
+            re.I,
+        )
+        if m and "og-image.jpg" not in m.group(1):
+            img = m.group(1)
+
     if not price:
-        # Only use regex price if the page is clearly an item page with a non-generic title/image
         m = re.search(r"\$\s*([0-9]+(?:\.[0-9]{1,2})?)", html)
         if m:
             price = m.group(1)
@@ -185,12 +352,167 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
 
 
 def scrape_ikako(url: str) -> Dict[str, str]:
-    final_url, kb_html = _fetch(url, HEADERS, timeout=18)
+    # ── 0. Handle direct image links immediately ─────────────────────────────
+    if IMAGE_EXT_RE.search(url.split("?")[0]):
+        return {
+            "kakobuy": url,
+            "picksly": "",
+            "title": url.split("/")[-1].split("?")[0],
+            "img": url,
+            "price": "",
+            "category": "",
+        }
 
+    # First try JS-rendered scraping (Kakobuy/picks.ly are SPA shells without JS).
+    try:
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        driver = _get_driver()
+        try:
+            driver.get(url)
+
+            final_url = driver.current_url
+            parsed = urlparse(final_url)
+            qs = parse_qs(parsed.query)
+            source_url = unquote(qs.get("url", [""])[0])
+            picksly = _build_picksly(source_url)
+
+            # Wait for content to render
+            wait = WebDriverWait(driver, 25)
+            try:
+                wait.until(
+                    EC.presence_of_element_located(
+                        (By.CSS_SELECTOR, "h1, [class*='title'], [class*='price'], img")
+                    )
+                )
+            except Exception:
+                pass
+
+            html = driver.page_source
+
+            result: Dict[str, str] = {
+                "kakobuy": url,
+                "picksly": picksly,
+                "title": "",
+                "img": "",
+                "price": "",
+                "category": "",
+            }
+
+            # Title
+            texts = []
+            for sel in (
+                "h1",
+                "[class*='goods-title']",
+                "[class*='item-title']",
+                "[class*='product-title']",
+                "[class*='detail-title']",
+                "[class*='title']",
+                "[class*='name']",
+            ):
+                try:
+                    for el in driver.find_elements(By.CSS_SELECTOR, sel):
+                        t = (el.text or "").strip()
+                        if not t:
+                            continue
+                        low = t.lower()
+                        if "kakobuy" in low or "taobao agent" in low:
+                            continue
+                        if len(t) < 4 or len(t) > 300:
+                            continue
+                        texts.append(t)
+                except Exception:
+                    continue
+            if texts:
+                # pick the longest plausible title
+                result["title"] = max(texts, key=len)
+
+            if not result["title"]:
+                dt = (driver.title or "").strip()
+                if dt and "kakobuy" not in dt.lower():
+                    result["title"] = dt
+
+            if not result["title"]:
+                t = _og(html, "og:title")
+                if t and "kakobuy" not in t.lower():
+                    result["title"] = t
+
+            # Image
+            im = _og(html, "og:image")
+            if im:
+                low = im.lower()
+                if "logo" not in low and "banner" not in low and "icon" not in low:
+                    result["img"] = im.split("?")[0].split("!")[0]
+
+            if not result["img"]:
+                # Prefer real product images over banners
+                srcs = []
+                for el in driver.find_elements(By.CSS_SELECTOR, "img"):
+                    src = (el.get_attribute("src") or el.get_attribute("data-src") or "").strip()
+                    if not src.startswith("http"):
+                        continue
+                    low = src.lower()
+                    if any(bad in low for bad in ("logo", "banner", "icon", "sprite", "favicon", "avatar", "nstatic.kakobuy.com/banner")):
+                        continue
+                    if re.search(r"\.(jpg|jpeg|png|webp)(?:\\?|$)", src, re.I):
+                        srcs.append(src.split("?")[0].split("!")[0])
+                # Prefer known CDN patterns if possible
+                cdn_srcs = [s for s in srcs if CDN_RE.search(s)]
+                pick = (cdn_srcs[0] if cdn_srcs else (srcs[0] if srcs else ""))
+                if pick:
+                    result["img"] = pick
+
+            if not result["img"]:
+                m = CDN_RE.search(html)
+                if m:
+                    cand = m.group(0).split("?")[0].split("!")[0]
+                    low = cand.lower()
+                    if "banner" not in low and "logo" not in low:
+                        result["img"] = cand
+
+            # Price
+            pr = _og(html, "og:price:amount") or _og(html, "product:price:amount")
+            if pr:
+                result["price"] = pr.strip()
+            if not result["price"]:
+                # search visible text blocks
+                for sel in ("[class*='price']", "[class*='Price']", "[class*='amount']", "[class*='cost']", "span", "div"):
+                    try:
+                        els = driver.find_elements(By.CSS_SELECTOR, sel)
+                        for el in els:
+                            txt = (el.text or "").strip()
+                            if not txt or len(txt) > 80:
+                                continue
+                            if "$" not in txt and "usd" not in txt.lower():
+                                continue
+                            m = re.search(r"([0-9]+(?:\\.[0-9]{1,2})?)", txt.replace(",", ""))
+                            if m:
+                                val = float(m.group(1))
+                                if 0.5 < val < 99999:
+                                    result["price"] = m.group(1)
+                                    break
+                        if result["price"]:
+                            break
+                    except Exception:
+                        continue
+
+            return result
+        finally:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+    except Exception:
+        # Fall back to non-JS scraping (may not return title/img/price for SPA pages).
+        pass
+
+    final_url, kb_html = _fetch(url, HEADERS, timeout=18)
     source_url = _extract_source_url(final_url, kb_html)
     picksly = _build_picksly(source_url)
 
-    result: Dict[str, str] = {
+    result = {
         "kakobuy": url,
         "picksly": picksly,
         "title": "",
@@ -215,10 +537,10 @@ def scrape_ikako(url: str) -> Dict[str, str]:
         if pr:
             result["price"] = pr
 
-    if (not result["title"] or not result["img"] or not result["price"]) and picksly:
+    if (not result["title"] or not result["img"] or not result["price"] or result["price"] in {"0", "1"}) and picksly:
         qc = _picksly_fallback(picksly)
         for k in ("title", "img", "price"):
-            if not result[k] and qc.get(k):
+            if (not result[k] or (k == "price" and result["price"] in {"0", "1"})) and qc.get(k):
                 result[k] = qc[k]
 
     if not result["img"]:
