@@ -264,11 +264,15 @@ class AdminApp:
     def __init__(self, root):
         self.root = root
         self.root.title("SnakeFinds – Secure Desktop Admin")
-        self.root.geometry("900x680")
+        self.root.geometry("960x720")
 
         self.items = []
         self.theme = {}
         self.popup = {}
+        self.landing = {}
+        self.nav = []
+        self.pages = {}
+        self.weightEstimator = {}
 
         self.setup_ui()
         self.fetch_data()
@@ -290,6 +294,8 @@ class AdminApp:
         self._build_bulk_tab()
         self._build_theme_tab()
         self._build_popup_tab()
+        self._build_website_json_tab()
+        self._build_weight_json_tab()
 
     # ── Items tab ─────────────────────────────────────────────────────────────
 
@@ -391,6 +397,66 @@ class AdminApp:
         tk.Button(tab, text="Sync Popup to Web", command=self.sync_popup,
                   bg="lightgreen", font=("Arial", 10, "bold")).pack(pady=20)
 
+    # ── Website copy (JSON) tab ───────────────────────────────────────────────
+
+    def _build_website_json_tab(self):
+        tab = tk.Frame(self.notebook)
+        self.notebook.add(tab, text="Website copy")
+
+        wrap = tk.Frame(tab, padx=12, pady=10)
+        wrap.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(
+            wrap,
+            text="Landing page (index.html): hero text, CTAs, logo line, agent icons, etc. — valid JSON object.",
+            font=("Arial", 9), fg="gray", wraplength=880, justify="left",
+        ).pack(anchor="w")
+        self.txt_landing = tk.Text(wrap, height=10, font=("Courier", 9), wrap=tk.NONE)
+        self.txt_landing.pack(fill=tk.BOTH, expand=True, pady=(2, 10))
+
+        tk.Label(
+            wrap,
+            text="Navigation bar: JSON array like [ {\"label\": \"Home\", \"href\": \"index.html\"}, … ]",
+            font=("Arial", 9), fg="gray", wraplength=880, justify="left",
+        ).pack(anchor="w")
+        self.txt_nav = tk.Text(wrap, height=7, font=("Courier", 9), wrap=tk.NONE)
+        self.txt_nav.pack(fill=tk.BOTH, expand=True, pady=(2, 10))
+
+        tk.Label(
+            wrap,
+            text="Other pages: {\"footer\": \"…\", \"finds\": { \"heroEyebrow\", \"heroLine1\", \"heroLine2\", \"heroSub\", \"searchPlaceholder\" } }",
+            font=("Arial", 9), fg="gray", wraplength=880, justify="left",
+        ).pack(anchor="w")
+        self.txt_pages = tk.Text(wrap, height=9, font=("Courier", 9), wrap=tk.NONE)
+        self.txt_pages.pack(fill=tk.BOTH, expand=True, pady=(2, 10))
+
+        tk.Button(
+            wrap, text="Sync Website Copy to data.json", command=self.sync_website_json,
+            bg="lightgreen", font=("Arial", 10, "bold"),
+        ).pack(pady=8)
+
+    # ── Weight estimator (JSON) tab ──────────────────────────────────────────
+
+    def _build_weight_json_tab(self):
+        tab = tk.Frame(self.notebook)
+        self.notebook.add(tab, text="Weight estimator")
+
+        wrap = tk.Frame(tab, padx=12, pady=10)
+        wrap.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(
+            wrap,
+            text="Full weightEstimator object: UI strings, defaultPackagingId, packaging[], categories[] (each category: id, label, icon, color, items[{name, grams}]).",
+            font=("Arial", 9), fg="gray", wraplength=880, justify="left",
+        ).pack(anchor="w")
+        self.txt_weight = tk.Text(wrap, height=22, font=("Courier", 9), wrap=tk.NONE)
+        self.txt_weight.pack(fill=tk.BOTH, expand=True, pady=(2, 8))
+
+        tk.Button(
+            wrap, text="Sync Weight Estimator to data.json", command=self.sync_weight_json,
+            bg="lightgreen", font=("Arial", 10, "bold"),
+        ).pack(pady=6)
+
     # ── widget helpers ────────────────────────────────────────────────────────
 
     def make_field(self, label, parent):
@@ -409,12 +475,21 @@ class AdminApp:
                 return json.load(fh)
         except Exception as e:
             messagebox.showerror("File Error", f"Could not read data.json\n{e}")
-            return {"items": [], "theme": {}, "popup": {}}
+            return {"items": [], "theme": {}, "popup": {}, "landing": {}, "nav": [], "pages": {}, "weightEstimator": {}}
 
     def _write_data(self):
         try:
+            payload = {
+                "items": self.items,
+                "theme": self.theme,
+                "popup": self.popup,
+                "landing": self.landing,
+                "nav": self.nav,
+                "pages": self.pages,
+                "weightEstimator": self.weightEstimator,
+            }
             with open(DATA_FILE, 'w', encoding='utf-8') as fh:
-                json.dump({"items": self.items, "theme": self.theme, "popup": self.popup}, fh, indent=2)
+                json.dump(payload, fh, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
             messagebox.showerror("File Error", f"Could not write data.json\n{e}")
@@ -425,9 +500,15 @@ class AdminApp:
         self.items = d.get('items', [])
         self.theme = d.get('theme', {})
         self.popup = d.get('popup', {})
+        self.landing = d.get('landing') or {}
+        self.nav = d.get('nav') or []
+        self.pages = d.get('pages') or {}
+        self.weightEstimator = d.get('weightEstimator') or {}
         self.refresh_listbox()
         self.update_theme_inputs()
         self.update_popup_inputs()
+        self.update_website_json_inputs()
+        self.update_weight_json_inputs()
 
     def refresh_listbox(self):
         self.item_listbox.delete(0, tk.END)
@@ -702,6 +783,66 @@ class AdminApp:
                 self.git_auto_push()
             else:
                 messagebox.showinfo("Saved", "Popup settings saved!")
+
+    def update_website_json_inputs(self):
+        self.txt_landing.delete('1.0', tk.END)
+        self.txt_landing.insert('1.0', json.dumps(self.landing, indent=2, ensure_ascii=False))
+        self.txt_nav.delete('1.0', tk.END)
+        self.txt_nav.insert('1.0', json.dumps(self.nav, indent=2, ensure_ascii=False))
+        self.txt_pages.delete('1.0', tk.END)
+        self.txt_pages.insert('1.0', json.dumps(self.pages, indent=2, ensure_ascii=False))
+
+    def update_weight_json_inputs(self):
+        self.txt_weight.delete('1.0', tk.END)
+        self.txt_weight.insert('1.0', json.dumps(self.weightEstimator, indent=2, ensure_ascii=False))
+
+    def sync_website_json(self):
+        raw_l = self.txt_landing.get('1.0', tk.END).strip()
+        raw_n = self.txt_nav.get('1.0', tk.END).strip()
+        raw_p = self.txt_pages.get('1.0', tk.END).strip()
+        try:
+            landing = json.loads(_relax_json_trailing_commas(raw_l)) if raw_l else {}
+            if not isinstance(landing, dict):
+                raise ValueError('First block must be a JSON object { } (landing page).')
+            nav = json.loads(_relax_json_trailing_commas(raw_n)) if raw_n else []
+            if not isinstance(nav, list):
+                raise ValueError('Navigation must be a JSON array [ ].')
+            pages = json.loads(_relax_json_trailing_commas(raw_p)) if raw_p else {}
+            if not isinstance(pages, dict):
+                raise ValueError('Pages block must be a JSON object { }.')
+        except json.JSONDecodeError as e:
+            messagebox.showerror("Invalid JSON", f"Check your syntax.\n{e}")
+            return
+        except ValueError as e:
+            messagebox.showerror("Invalid data", str(e))
+            return
+        self.landing = landing
+        self.nav = nav
+        self.pages = pages
+        if self._write_data():
+            if self.use_git_var.get():
+                self.git_auto_push()
+            else:
+                messagebox.showinfo("Saved", "Website copy saved to data.json!")
+
+    def sync_weight_json(self):
+        raw = self.txt_weight.get('1.0', tk.END).strip()
+        try:
+            we = json.loads(_relax_json_trailing_commas(raw)) if raw else {}
+            if not isinstance(we, dict):
+                raise ValueError("Must be a JSON object { }.")
+        except json.JSONDecodeError as e:
+            messagebox.showerror("Invalid JSON", f"Check your syntax.\n{e}")
+            return
+        except ValueError as e:
+            messagebox.showerror("Invalid data", str(e))
+            return
+        self.weightEstimator = we
+        if self._write_data():
+            if self.use_git_var.get():
+                self.git_auto_push()
+            else:
+                messagebox.showinfo("Saved", "Weight estimator saved to data.json!")
 
 
 if __name__ == "__main__":

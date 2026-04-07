@@ -3,586 +3,280 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SNAKEFINDS — Find Your Next Rep</title>
+<title>Home</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --accent: #ff8c2d;
-    --accent-dim: rgba(255, 140, 45, 0.12);
-    --accent-glow: rgba(255, 140, 45, 0.22);
-    --accent2: #d9701a;
-    --bg: #060606;
-    --bg-elevated: #0c0c0c;
-    --surface: #121212;
-    --surface2: #1a1a1a;
-    --border: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(255, 255, 255, 0.1);
-    --text: #f4f4f5;
-    --muted: #8a8a8e;
-    --card-bg: linear-gradient(145deg, #161616 0%, #101010 100%);
-    --radius-card: 18px;
-    --radius-pill: 9999px;
-    --content-max: 1280px;
-    --shadow-card: 0 4px 32px rgba(0, 0, 0, 0.45);
-    --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--accent-glow);
+    --accent: #ff3d8c;
+    --accent2: #ff6b4a;
+    --bg: #050810;
+    --surface: #0d111c;
+    --surface2: #141a2a;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #f5f5f7;
+    --muted: #9ca3af;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; color-scheme: dark; }
   body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     background: var(--bg);
-    background-image:
-      radial-gradient(ellipse 120% 80% at 50% -30%, rgba(255, 140, 45, 0.09), transparent 55%),
-      radial-gradient(ellipse 60% 50% at 100% 20%, rgba(255, 100, 50, 0.04), transparent 50%);
-    color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+  .bg-blobs {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 10% 20%, rgba(255, 61, 140, 0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 90% 60%, rgba(255, 107, 74, 0.08), transparent);
+  }
+  .bg-shape {
+    position: fixed; border-radius: 24px; opacity: 0.15;
+    border: 1px solid rgba(255, 61, 140, 0.4);
+    transform: rotate(-12deg);
+    pointer-events: none; z-index: 0;
+  }
+  .bg-shape:nth-child(1) { width: 120px; height: 120px; top: 15%; left: 8%; filter: blur(1px); }
+  .bg-shape:nth-child(2) { width: 80px; height: 80px; top: 55%; left: 3%; opacity: 0.1; }
+  .bg-shape:nth-child(3) { width: 100px; height: 100px; bottom: 20%; right: 12%; transform: rotate(8deg); }
 
-  /* NAV */
-  nav {
-    position: sticky; top: 0; z-index: 50;
-    background: rgba(6, 6, 6, 0.78); backdrop-filter: blur(16px) saturate(1.2);
-    border-bottom: 1px solid var(--border);
-    padding: 0 clamp(16px, 4vw, 32px);
+  .side-brand {
+    position: fixed; right: 0; top: 50%; transform: translateY(-50%) rotate(-90deg);
+    font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 11px;
+    letter-spacing: 0.5em; color: rgba(255, 61, 140, 0.35); z-index: 1;
+    white-space: nowrap; pointer-events: none;
+  }
+  @media (max-width: 1100px) { .side-brand { display: none; } }
+
+  header.land-header {
+    position: relative; z-index: 10;
     display: flex; align-items: center; justify-content: space-between;
-    height: 62px;
+    padding: 20px clamp(16px, 4vw, 40px);
+    max-width: 1320px; margin: 0 auto;
   }
-  .nav-logo {
-    font-family: 'Bebas Neue', sans-serif; font-size: 27px; color: var(--accent);
-    letter-spacing: 3px; text-decoration: none;
-    text-shadow: 0 0 40px var(--accent-glow);
+  .land-logo {
+    font-family: 'Montserrat', sans-serif; font-weight: 800; font-style: italic;
+    font-size: clamp(18px, 2.5vw, 24px); color: var(--accent);
+    text-decoration: none; letter-spacing: -0.02em;
   }
-  .nav-end { display: flex; align-items: center; gap: 28px; }
-  .nav-links { display: flex; gap: 28px; align-items: center; }
-  .nav-currency-select { padding: 8px 14px; font-size: 12px; margin: 0; }
-  .nav-links a { color: var(--muted); font-size: 13px; text-decoration: none; letter-spacing: .5px; transition: color .2s; }
-  .nav-links a:hover { color: var(--text); }
-  .nav-right { display: flex; align-items: center; gap: 12px; }
-  .nav-admin { color: var(--accent); font-size: 12px; text-decoration: none; border: 1px solid var(--accent); padding: 6px 14px; border-radius: 4px; transition: background .2s; }
-  .nav-admin:hover { background: var(--accent); color: #fff; }
+  .nav-skew-wrap {
+    transform: skewX(-8deg);
+    background: linear-gradient(135deg, var(--accent) 0%, #ff6b9d 100%);
+    padding: 10px 28px; border-radius: 4px;
+    box-shadow: 0 8px 32px rgba(255, 61, 140, 0.35);
+  }
+  .nav-skew-inner {
+    transform: skewX(8deg);
+    display: flex; gap: clamp(8px, 1.5vw, 22px); flex-wrap: wrap; align-items: center; justify-content: center;
+  }
+  .nav-skew-inner a {
+    color: #0a0a0a; font-weight: 700; font-size: clamp(9px, 1.1vw, 11px);
+    text-decoration: none; text-transform: uppercase; letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .nav-skew-inner a:hover { opacity: 0.75; }
+  .nav-skew-inner a.active { text-decoration: underline; text-underline-offset: 3px; }
 
-  /* HERO */
-  .hero {
-    padding: clamp(48px, 10vw, 72px) clamp(20px, 4vw, 36px) clamp(36px, 6vw, 52px);
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    max-width: var(--content-max); margin: 0 auto;
+  .land-burger {
+    display: none; width: 48px; height: 48px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+    font-size: 20px; cursor: pointer;
   }
-  .hero::before {
-    content: '';
-    position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
-    width: min(720px, 100vw); height: 380px;
-    background: radial-gradient(ellipse, rgba(255, 140, 45, 0.2) 0%, rgba(255, 100, 50, 0.06) 40%, transparent 70%);
-    pointer-events: none;
+  .land-drawer {
+    display: none; position: fixed; inset: 0; top: 0; z-index: 100;
+    background: rgba(5, 8, 16, 0.96); padding: 88px 24px 24px; flex-direction: column; gap: 12px;
   }
-  .hero::after {
-    content: '';
-    position: absolute; bottom: 20%; left: -10%; width: 45%; height: 200px;
-    background: radial-gradient(ellipse, rgba(255, 140, 45, 0.05), transparent 70%);
-    pointer-events: none;
-  }
-  .hero-eyebrow {
-    position: relative; z-index: 1;
-    font-size: 11px; font-weight: 600; letter-spacing: 4px; color: var(--accent);
-    text-transform: uppercase; margin-bottom: 16px; opacity: 0.95;
-  }
-  .hero-title {
-    position: relative; z-index: 1;
-    font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 11vw, 96px);
-    line-height: 0.92; color: #fff; margin-bottom: 18px; letter-spacing: 2px;
-  }
-  .hero-title span { color: var(--accent); text-shadow: 0 0 80px var(--accent-glow); }
-  .hero-sub {
-    position: relative; z-index: 1;
-    color: var(--muted); font-size: clamp(14px, 2.5vw, 17px); max-width: 520px;
-    margin: 0 auto 32px; line-height: 1.65; font-weight: 400;
+  .land-drawer.open { display: flex; }
+  .land-drawer a {
+    padding: 16px; border-radius: 12px; border: 1px solid var(--border);
+    color: var(--text); text-decoration: none; font-weight: 600;
   }
 
-  /* SEARCH */
-  .search-wrap { max-width: 600px; margin: 0 auto; position: relative; z-index: 1; }
-  .search-wrap input {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    color: var(--text); font-family: 'Outfit', sans-serif; font-size: 15px;
-    padding: 16px 52px 16px 24px; border-radius: var(--radius-pill); outline: none;
-    transition: border-color .2s, box-shadow .25s;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  }
-  .search-wrap input:focus {
-    border-color: rgba(255, 140, 45, 0.55);
-    box-shadow: 0 8px 36px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--accent-dim);
-  }
-  .search-wrap input::placeholder { color: var(--muted); opacity: 0.85; }
-  .search-icon {
-    position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
-    color: var(--muted); font-size: 17px; pointer-events: none; opacity: 0.7;
+  @media (max-width: 1024px) {
+    .nav-skew-wrap { display: none; }
+    .land-burger { display: flex; align-items: center; justify-content: center; }
   }
 
-  /* CATEGORIES */
-  .cat-strip {
-    display: flex; gap: 10px;
-    padding: 28px clamp(16px, 4vw, 32px) 0;
-    max-width: var(--content-max); margin: 0 auto;
-    overflow-x: auto; scrollbar-width: none; justify-content: center;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+  .land-hero {
+    position: relative; z-index: 5;
+    max-width: 1320px; margin: 0 auto;
+    padding: clamp(32px, 6vw, 80px) clamp(16px, 4vw, 40px) 80px;
+    display: grid; grid-template-columns: 1fr; gap: 40px;
+    align-items: center;
   }
-  .cat-strip::-webkit-scrollbar { display: none; }
-  .cat-btn {
-    background: var(--surface2); color: var(--muted); border: 1px solid var(--border-strong);
-    padding: 10px 24px; border-radius: var(--radius-pill); font-size: 13px; font-family: 'Outfit', sans-serif;
-    cursor: pointer; white-space: nowrap; transition: all .2s ease; font-weight: 600; letter-spacing: .3px;
+  @media (min-width: 960px) {
+    .land-hero { grid-template-columns: 1.1fr 0.9fr; }
   }
-  .cat-btn.active {
+  .land-hero-copy { max-width: 640px; }
+  .land-hero-accent {
+    font-family: 'Montserrat', sans-serif; font-weight: 800;
+    font-size: clamp(40px, 7vw, 72px); line-height: 1.05; color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .land-hero-rest {
+    font-family: 'Montserrat', sans-serif; font-weight: 700;
+    font-size: clamp(28px, 5vw, 52px); line-height: 1.1; color: #fff;
+    margin-bottom: 24px;
+  }
+  .land-hero-sub {
+    color: var(--muted); font-size: clamp(14px, 1.8vw, 17px); line-height: 1.7; margin-bottom: 32px;
+  }
+  .land-cta-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 28px; }
+  .btn-pink {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 14px 28px; border-radius: 999px; border: none; cursor: pointer;
+    font-family: inherit; font-weight: 700; font-size: 15px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-    border-color: transparent; color: #fff;
-    box-shadow: 0 4px 20px var(--accent-glow);
+    color: #0a0a0a; text-decoration: none;
+    box-shadow: 0 8px 28px rgba(255, 61, 140, 0.35);
   }
-  .cat-btn:hover:not(.active) { border-color: rgba(255, 255, 255, 0.15); color: var(--text); background: var(--surface); }
-
-  /* PRODUCTS */
-  .products-section {
-    padding: 36px clamp(16px, 4vw, 32px) 80px;
-    max-width: var(--content-max); margin: 0 auto;
+  .btn-pink:hover { filter: brightness(1.08); }
+  .btn-white {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 14px 28px; border-radius: 999px;
+    font-family: inherit; font-weight: 700; font-size: 15px;
+    background: #fff; color: #0a0a0a; text-decoration: none; border: none; cursor: pointer;
   }
-  .products-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+  .btn-white:hover { opacity: 0.92; }
+  .agent-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .agent-row span { font-size: 12px; color: var(--muted); margin-right: 6px; }
+  .agent-icon {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--surface2);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
   }
-  .products-title {
-    font-family: 'Bebas Neue', sans-serif; font-size: clamp(26px, 4vw, 34px);
-    letter-spacing: 2px; color: #fff;
+  .land-hero-visual {
+    position: relative; min-height: 200px;
+    border-radius: 24px; border: 1px solid var(--border);
+    background: linear-gradient(160deg, var(--surface2) 0%, var(--surface) 100%);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   }
-  .products-count { color: var(--accent); font-weight: 500; }
-  .sort-select {
-    background: var(--surface2);
-    border: 1px solid var(--border-strong);
-    color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px;
-    padding: 10px 18px; border-radius: var(--radius-pill); outline: none; cursor: pointer; font-weight: 500;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  .sort-select:hover { border-color: rgba(255, 140, 45, 0.35); }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 232px), 1fr));
-    gap: clamp(14px, 2vw, 22px);
+  .land-hero-visual-inner {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(48px, 10vw, 100px); opacity: 0.25;
   }
 
-  .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-card);
-    overflow: hidden; position: relative;
-    transition: transform .35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .35s, border-color .25s;
-    display: flex; flex-direction: column;
-    box-shadow: var(--shadow-card);
-  }
-  .card::before {
-    content: '';
-    position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-    opacity: 0; transition: opacity .35s;
-    background: linear-gradient(165deg, rgba(255, 255, 255, 0.04) 0%, transparent 45%);
-  }
-  .card:hover {
-    transform: translateY(-6px);
-    border-color: rgba(255, 140, 45, 0.28);
-    box-shadow: var(--shadow-card-hover);
-  }
-  .card:hover::before { opacity: 1; }
-  .card-img-wrap {
-    position: relative; aspect-ratio: 1; overflow: hidden;
-    background: linear-gradient(145deg, #222 0%, #141414 100%);
-  }
-  .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s cubic-bezier(0.22, 1, 0.36, 1); }
-  .card:hover .card-img-wrap img { transform: scale(1.06); }
-  .card-emoji { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: clamp(44px, 12vw, 56px); }
-  .card-body { padding: 16px 16px 12px; flex: 1; }
-  .card-name {
-    font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 5px;
-    line-height: 1.35;
-    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 2.6em;
-  }
-  .card-cat {
-    font-size: 12px; font-weight: 500; color: var(--muted);
-    margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.08em;
-  }
-  .card-price {
-    font-family: 'Bebas Neue', sans-serif; font-size: clamp(22px, 3.2vw, 28px);
-    color: var(--accent); letter-spacing: 1px;
-  }
-  .card-price span {
-    font-family: 'Outfit', sans-serif; font-size: 11px; color: var(--muted);
-    font-weight: 600; letter-spacing: 0.06em; vertical-align: middle; margin-left: 4px;
-  }
-  .card-footer { padding: 0 14px 14px; display: flex; gap: 10px; }
-  .btn-buy {
-    flex: 1;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-    color: #fff; border: none; border-radius: var(--radius-pill);
-    padding: 11px 14px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
-    cursor: pointer; letter-spacing: .3px;
-    transition: filter .2s, transform .15s, box-shadow .2s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    text-decoration: none;
-    box-shadow: 0 4px 16px var(--accent-glow);
-  }
-  .btn-buy:hover { filter: brightness(1.08); }
-  .btn-buy:active { transform: scale(0.98); }
-  .btn-buy.btn-qc {
-    flex: 0 0 auto;
-    background: transparent;
-    border: 1px solid var(--border-strong);
-    color: var(--text);
-    box-shadow: none;
-    padding: 12px 18px;
-  }
-  .btn-buy.btn-qc:hover {
-    border-color: rgba(255, 140, 45, 0.4);
-    background: var(--accent-dim);
-    filter: none;
-  }
-
-  .empty-state { text-align: center; padding: 80px 20px; color: var(--muted); grid-column: 1/-1; }
-  .empty-state .big { font-size: 52px; margin-bottom: 16px; opacity: 0.85; }
-  .empty-state p { font-size: 15px; line-height: 1.65; max-width: 320px; margin: 0 auto; }
-
-  /* FOOTER */
-  footer {
-    border-top: 1px solid var(--border-strong);
-    padding: 32px clamp(16px, 4vw, 32px);
-    text-align: center; color: var(--muted); font-size: 13px;
-  }
-  footer a { color: var(--accent); text-decoration: none; }
-
-  /* PROMO MODAL */
-  .promo-modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
-    z-index: 9999; display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none; transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    padding: 20px;
-  }
-  .promo-modal-overlay.active { opacity: 1; pointer-events: auto; }
-  .promo-modal {
-    background: linear-gradient(180deg, #141414 0%, #0f0f0f 100%);
-    border: 1px solid var(--border-strong); border-radius: var(--radius-card);
-    width: 100%; max-width: 400px; overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-    transform: translateY(20px) scale(0.95); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .promo-modal-overlay.active .promo-modal { transform: translateY(0) scale(1); }
-  
-  .promo-header {
-    background: #1a1114; padding: 16px 20px;
-    display: flex; justify-content: center; align-items: center; position: relative;
-    border-bottom: 1px solid #222;
-  }
-  .promo-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; font-style: italic; display: flex; align-items: center; gap: 8px;}
-  .promo-title span { color: var(--accent); }
-  .promo-close {
-    position: absolute; right: 20px;
-    background: #222; border: none; color: #888; width: 28px; height: 28px;
-    border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s, color 0.2s; font-size: 14px;
-  }
-  .promo-close:hover { background: #333; color: #fff; }
-  
-  .promo-body { padding: 24px 20px; }
-  .promo-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .promo-logo { 
-    width: 44px; height: 44px; border-radius: 10px; background: #fff; 
-    border: none; display: flex; align-items: center; justify-content: center; 
-    font-weight: bold; color: #000; font-size: 11px; text-align: center; line-height: 1.1; 
-  }
-  .promo-brand-name { font-size: 18px; font-weight: 700; color: #fff; }
-  .promo-badge { background: var(--accent); color: #fff; font-size: 9px; font-weight: 700; padding: 4px 6px; border-radius: 4px; letter-spacing: 1px; margin-left: 8px; }
-  .promo-desc { color: #999; font-size: 12px; line-height: 1.5; margin-bottom: 20px; font-style: italic; }
-  
-  .promo-code-box {
-    background: #080808; border: 1px solid #222; border-radius: 12px; padding: 14px 16px;
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
-  }
-  .promo-code-label { font-size: 10px; color: #666; font-weight: 700; margin-bottom: 4px; letter-spacing: 1px; text-transform: uppercase; }
-  .promo-code-val { font-size: 18px; font-weight: 700; color: #fff; }
-  .promo-copy {
-    background: transparent; border: none; color: #888; cursor: pointer; padding: 6px;
-    transition: color 0.2s; display: flex; align-items: center; justify-content: center;
-  }
-  .promo-copy:hover { color: #fff; }
-  
-  .promo-btn {
-    display: flex; align-items: center; justify-content: center; width: 100%;
-    background: var(--accent); color: #fff; text-decoration: none; padding: 14px;
-    border-radius: 10px; font-size: 14px; font-weight: 700; transition: transform 0.2s, filter 0.2s;
-  }
-  .promo-btn:hover { filter: brightness(1.1); }
-  .promo-btn:active { transform: scale(0.98); }
-
-  @media (max-width: 600px) {
-    nav { padding: 0 14px 0 16px; }
-    .nav-logo { font-size: 22px; letter-spacing: 1px; text-shadow: none; }
-    .nav-links { display: none; }
-    .nav-end { gap: 0; justify-content: flex-end; flex: 1; min-width: 0; }
-    .nav-currency-select { font-size: 11px; padding: 6px 12px; flex-shrink: 0; }
-    .hero { padding: 40px 16px 28px; }
-    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .products-section { padding: 24px 16px 56px; }
-    .card-body { padding: 12px 11px 10px; }
-    .card-footer { padding: 0 11px 12px; gap: 8px; }
-    .card-name { font-size: 12px; min-height: 0; -webkit-line-clamp: 2; line-clamp: 2; }
-    .card-cat { font-size: 10px; margin-bottom: 8px; }
-    .btn-buy { padding: 9px 10px; font-size: 12px; }
-    .btn-buy.btn-qc { padding: 9px 12px; }
-    .card-emoji { font-size: 32px; }
+  footer.land-footer {
+    position: relative; z-index: 5; text-align: center; padding: 32px 16px 48px;
+    color: var(--muted); font-size: 13px; border-top: 1px solid var(--border);
   }
 </style>
 </head>
 <body>
+<div class="bg-blobs"></div>
+<div class="bg-shape"></div><div class="bg-shape"></div><div class="bg-shape"></div>
+<div class="side-brand" id="sideBrandEl">SNAKEFINDS</div>
 
-<nav>
-  <a class="nav-logo" href="index.html">SNAKEFINDS</a>
-  <div class="nav-end">
-    <div class="nav-links">
-      <a href="#">How to Buy</a>
+<header class="land-header">
+  <a class="land-logo" href="index.html" id="landLogoText">SNAKEFINDS</a>
+  <div class="nav-skew-wrap" aria-label="Main navigation">
+    <nav class="nav-skew-inner" id="navSkew"></nav>
+  </div>
+  <button type="button" class="land-burger" id="landBurger" aria-label="Menu" aria-expanded="false">☰</button>
+</header>
+<nav class="land-drawer" id="landDrawer" aria-hidden="true"></nav>
+
+<main class="land-hero">
+  <div class="land-hero-copy">
+    <h1>
+      <div class="land-hero-accent" id="landHeroAccent">Discover.</div>
+      <div class="land-hero-rest" id="landHeroRest">Quality Replicas Without the Scams</div>
+    </h1>
+    <p class="land-hero-sub" id="landHeroSub">Curated finds and guides from trusted community sources.</p>
+    <div class="land-cta-row">
+      <a class="btn-pink" id="landCta1" href="finds.html">Browse</a>
+      <a class="btn-white" id="landCta2" href="#">Learn How to Buy</a>
     </div>
-    <select id="currencyApp" onchange="changeCurrency()" class="sort-select nav-currency-select" aria-label="Currency">
-      <option value="USD">USD ($)</option>
-      <option value="EUR">EUR (€)</option>
-      <option value="GBP">GBP (£)</option>
-      <option value="CAD">CAD ($)</option>
-      <option value="AUD">AUD ($)</option>
-    </select>
+    <div class="agent-row" id="agentRow">
+      <span>Agents</span>
+    </div>
   </div>
-</nav>
-
-<section class="hero">
-  <div class="hero-eyebrow">The community rep directory</div>
-  <h1 class="hero-title">Find Your<br><span>Next Rep</span></h1>
-  <p class="hero-sub">Curated replica finds from trusted sellers. Quality checked, community approved.</p>
-  <div class="search-wrap">
-    <input type="text" id="searchInput" placeholder="Search replicas — shoes, tees, bags..." oninput="renderGrid()" />
-    <span class="search-icon">🔍</span>
+  <div class="land-hero-visual">
+    <div class="land-hero-visual-inner">✦</div>
   </div>
-</section>
+</main>
 
-<div class="cat-strip" id="catStrip"></div>
+<footer class="land-footer" id="landFooter">© 2026 · For educational purposes only.</footer>
 
-<section class="products-section">
-  <div class="products-header">
-    <div class="products-title">FINDS <span class="products-count" id="countEl"></span></div>
-    <select class="sort-select" id="sortSel" onchange="renderGrid()">
-      <option value="default">Default</option>
-      <option value="price-asc">Price: Low to High</option>
-      <option value="price-desc">Price: High to Low</option>
-      <option value="name">Name A–Z</option>
-    </select>
-  </div>
-  <div class="grid" id="grid"></div>
-</section>
-
-<footer>
-  <p>© 2026 SNAKEFINDS &nbsp;·&nbsp; For educational purposes only.</p>
-</footer>
-
-<div id="promoModalContainer"></div>
-
+<script src="site-shell.js"></script>
 <script>
-const CATS = ['All','Shoes','T-Shirts','Jackets/Coats','Sweaters/Hoodies','Bags','Hats/Caps','Accessories','Other'];
-const CAT_EMOJI = {Shoes:'👟','T-Shirts':'👕','Jackets/Coats':'🧥','Sweaters/Hoodies':'🪡',Bags:'👜','Hats/Caps':'🧢',Accessories:'💎',Other:'📦'};
-let activeCat = 'All';
-
-let allItems = [];
-let siteTheme = {};
-let sitePopup = {};
-
-const RATES = { USD: 1, EUR: 0.92, GBP: 0.79, CAD: 1.36, AUD: 1.52 };
-const SYMBOLS = { USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
-let currentCurrency = 'USD';
-
-function changeCurrency() {
-  currentCurrency = document.getElementById('currencyApp').value;
-  renderGrid();
-}
-
-async function loadData() {
+(async function () {
   try {
-    const res = await fetch('./data.json');
-    if (!res.ok) throw new Error('Data fetch failed');
-    const data = await res.json();
-    allItems = data.items || [];
-    siteTheme = data.theme || {};
-    sitePopup = data.popup || {};
-    applyTheme(siteTheme);
-    buildCats();
-    renderGrid();
-    checkPromoPopup();
-  } catch (err) {
-    console.error('Error loading data', err);
+    const data = await SiteShell.loadData();
+    const t = data.theme || {};
+    SiteShell.applyTheme(t);
+    if (t.accent) {
+      document.documentElement.style.setProperty('--accent', t.accent);
+      document.documentElement.style.setProperty('--accent2', t.accent2 || t.accent);
+    }
+    if (t.bg) document.documentElement.style.setProperty('--bg', t.bg);
+    if (t.surface) {
+      document.documentElement.style.setProperty('--surface', t.surface);
+      document.documentElement.style.setProperty('--surface2', t.surface);
+    }
+
+    const L = data.landing || {};
+    const site = t.siteName || 'SNAKEFINDS';
+    document.getElementById('landLogoText').textContent = L.logoText || (site.toUpperCase() + (L.logoSuffix || ''));
+    document.getElementById('sideBrandEl').textContent = (L.sideBrand || site).toUpperCase().replace(/\s/g, '');
+
+    if (L.heroAccent != null) document.getElementById('landHeroAccent').textContent = L.heroAccent;
+    if (L.heroRest != null) document.getElementById('landHeroRest').textContent = L.heroRest;
+    if (L.heroSub != null) document.getElementById('landHeroSub').textContent = L.heroSub;
+    if (L.ctaPrimary != null) document.getElementById('landCta1').textContent = L.ctaPrimary;
+    if (L.ctaPrimaryHref != null) document.getElementById('landCta1').href = L.ctaPrimaryHref;
+    if (L.ctaSecondary != null) document.getElementById('landCta2').textContent = L.ctaSecondary;
+    if (L.ctaSecondaryHref != null) document.getElementById('landCta2').href = L.ctaSecondaryHref;
+    if (data.pages && data.pages.footer != null) document.getElementById('landFooter').textContent = data.pages.footer;
+
+    const nav = data.nav || [];
+    const skew = document.getElementById('navSkew');
+    const drawer = document.getElementById('landDrawer');
+    const file = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    skew.innerHTML = nav.map((item) => {
+      const href = String(item.href || '#');
+      const safeH = href.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+      const label = SiteShell.esc(item.label);
+      const hFile = href.split('/').pop().toLowerCase() || 'index.html';
+      const active = file === hFile ? 'active' : '';
+      return `<a href="${safeH}" class="${active}">${label}</a>`;
+    }).join('');
+    drawer.innerHTML = nav.map((item) => {
+      const href = String(item.href || '#');
+      const safeH = href.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+      return `<a href="${safeH}">${SiteShell.esc(item.label)}</a>`;
+    }).join('');
+
+    const agents = (L.agentIcons || '🐼,🔗,📦,🔥,💎,✨').split(',').map((s) => s.trim()).filter(Boolean);
+    const row = document.getElementById('agentRow');
+    row.innerHTML = `<span>${SiteShell.esc(L.agentsLabel || 'Agents')}</span>` +
+      agents.map((ic) => `<span class="agent-icon">${ic}</span>`).join('');
+
+    const burger = document.getElementById('landBurger');
+    burger.addEventListener('click', () => {
+      drawer.classList.toggle('open');
+      const o = drawer.classList.contains('open');
+      burger.setAttribute('aria-expanded', o ? 'true' : 'false');
+      drawer.setAttribute('aria-hidden', o ? 'false' : 'true');
+    });
+    drawer.querySelectorAll('a').forEach((a) => {
+      a.addEventListener('click', () => {
+        drawer.classList.remove('open');
+        burger.setAttribute('aria-expanded', 'false');
+        drawer.setAttribute('aria-hidden', 'true');
+      });
+    });
+
+    document.title = (L.pageTitle || site) + ' — Home';
+  } catch (e) {
+    console.error(e);
   }
-}
-
-function getItems() { return allItems; }
-function getTheme() { return siteTheme; }
-
-function applyTheme(t) {
-  const r = document.documentElement;
-  if (t.accent) r.style.setProperty('--accent', t.accent);
-  if (t.bg) r.style.setProperty('--bg', t.bg);
-  if (t.surface) r.style.setProperty('--surface', t.surface);
-  if (t.siteName) document.querySelector('.nav-logo').textContent = t.siteName;
-  if (t.tagline) document.querySelector('.hero-sub').textContent = t.tagline;
-}
-
-function buildCats() {
-  const strip = document.getElementById('catStrip');
-  strip.innerHTML = CATS.map(c => `<button class="cat-btn${activeCat===c?' active':''}" onclick="setCat('${c}')">${c}</button>`).join('');
-}
-
-function setCat(c) { activeCat = c; buildCats(); renderGrid(); }
-function quickSearch(q) { document.getElementById('searchInput').value = q; renderGrid(); }
-
-function renderGrid() {
-  const items = getItems();
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const sort = document.getElementById('sortSel').value;
-  let filtered = items.filter(it =>
-    (activeCat === 'All' || it.category === activeCat) &&
-    (!q || it.title.toLowerCase().includes(q) || it.category.toLowerCase().includes(q))
-  );
-  if (sort === 'price-asc') filtered.sort((a,b) => parseFloat(a.price) - parseFloat(b.price));
-  else if (sort === 'price-desc') filtered.sort((a,b) => parseFloat(b.price) - parseFloat(a.price));
-  else if (sort === 'name') filtered.sort((a,b) => a.title.localeCompare(b.title));
-
-  document.getElementById('countEl').textContent = `(${filtered.length})`;
-  const grid = document.getElementById('grid');
-  if (!filtered.length) {
-    grid.innerHTML = `<div class="empty-state"><div class="big">🔍</div><p>No finds match your search.<br>Try a different category or keyword.</p></div>`;
-    return;
-  }
-  grid.innerHTML = filtered.map(it => {
-    const imgContent = it.img
-      ? `<img src="${it.img}" alt="${it.title}" onerror="this.parentNode.innerHTML='<div class=card-emoji>${CAT_EMOJI[it.category]||'📦'}</div>'">`
-      : `<div class="card-emoji">${CAT_EMOJI[it.category]||'📦'}</div>`;
-    
-    const localPrice = (parseFloat(it.price) * RATES[currentCurrency]).toFixed(2);
-    
-    return `<div class="card">
-      <div class="card-img-wrap">
-        ${imgContent}
-      </div>
-      <div class="card-body">
-        <div class="card-name" title="${it.title}">${it.title}</div>
-        <div class="card-cat">${it.category}</div>
-        <div class="card-price">${SYMBOLS[currentCurrency]}${localPrice} <span>${currentCurrency}</span></div>
-      </div>
-      <div class="card-footer">
-        <a class="btn-buy" href="${it.kakobuy}" target="_blank" rel="noopener">🛒 Buy Now</a>
-        ${it.picksly ? `<a class="btn-buy btn-qc" href="${it.picksly}" target="_blank" rel="noopener" title="View QC Images">📸 QC</a>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function checkPromoPopup() {
-  if (!sitePopup.enabled) return;
-  if (sessionStorage.getItem('promo_seen')) return;
-
-  const titleRaw = sitePopup.title || 'PROMO';
-  let titleHtml = titleRaw;
-  const lowerTitle = titleRaw.toLowerCase();
-  if (lowerTitle.endsWith('buy') && lowerTitle !== 'buy') {
-      const idx = lowerTitle.lastIndexOf('buy');
-      titleHtml = `${titleRaw.substring(0, idx)}<span>${titleRaw.substring(idx)}</span>`;
-  } else if (titleRaw.includes(' ')) {
-      const parts = titleRaw.split(' ');
-      titleHtml = `${parts[0]} <span>${parts.slice(1).join(' ')}</span>`;
-  }
-
-  const brandStr = sitePopup.brand || 'Kakobuy';
-  const brandTop = brandStr.substring(0,4).toLowerCase();
-  const brandBottom = brandStr.substring(4).charAt(0).toUpperCase() + brandStr.substring(5).toLowerCase();
-
-  const container = document.getElementById('promoModalContainer');
-  container.innerHTML = `
-    <div class="promo-modal-overlay" id="promoOverlay" onclick="closePromoFromOutside(event)">
-      <div class="promo-modal">
-        <div class="promo-header">
-          <div class="promo-title">⚡ ${titleHtml}</div>
-          <button class="promo-close" onclick="closePromo()">✕</button>
-        </div>
-        <div class="promo-body">
-          <div class="promo-brand-row">
-            <div class="promo-logo" style="display:flex; flex-direction:column; line-height:0.95; padding-top:2px;">
-               <span style="color:#ff2d6b; font-size:14px; font-weight:900; letter-spacing:-0.2px;">${brandTop}</span>
-               <span style="color:#000; font-size:12px; font-weight:800; letter-spacing:-0.2px;">${brandBottom}</span>
-            </div>
-            <div style="display:flex; align-items:center;">
-              <span class="promo-brand-name">${sitePopup.brand}</span>
-              <span class="promo-badge">${sitePopup.badge}</span>
-            </div>
-          </div>
-          <div class="promo-desc">${sitePopup.desc}</div>
-          <div class="promo-code-box">
-            <div>
-              <div class="promo-code-label">CODE</div>
-              <div class="promo-code-val" id="promoCodeVal">${sitePopup.code}</div>
-            </div>
-            <button class="promo-copy" onclick="copyPromo()" title="Copy Code">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            </button>
-          </div>
-          <a href="${sitePopup.link}" target="_blank" rel="noopener" class="promo-btn">
-            ${sitePopup.btn_text} &nbsp;
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-          </a>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  setTimeout(() => {
-    document.getElementById('promoOverlay').classList.add('active');
-  }, 100);
-}
-
-function closePromoFromOutside(e) {
-  if (e.target.id === 'promoOverlay') {
-    closePromo();
-  }
-}
-
-function closePromo() {
-  const overlay = document.getElementById('promoOverlay');
-  if(overlay) overlay.classList.remove('active');
-  sessionStorage.setItem('promo_seen', 'true');
-  setTimeout(() => {
-    document.getElementById('promoModalContainer').innerHTML = '';
-  }, 400);
-}
-
-function copyPromo() {
-  const code = document.getElementById('promoCodeVal').innerText;
-  navigator.clipboard.writeText(code).then(() => {
-    const btn = document.querySelector('.promo-copy');
-    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2dff9b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-    setTimeout(() => {
-      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-    }, 2000);
-  });
-}
-
-loadData();
+})();
 </script>
 </body>
 </html>
