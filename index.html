@@ -76,13 +76,8 @@
   .search-wrap input::placeholder { color: var(--muted); }
   .search-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
 
-  /* QUICK TAGS */
-  .quick-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 16px 24px 0; }
-  .tag { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 5px 16px; border-radius: 50px; font-size: 12px; cursor: pointer; transition: all .2s; font-weight: 500; }
-  .tag:hover { border-color: var(--accent); color: var(--accent); }
-
   /* CATEGORIES */
-  .cat-strip { display: flex; gap: 8px; padding: 20px 24px 0; overflow-x: auto; scrollbar-width: none; }
+  .cat-strip { display: flex; gap: 8px; padding: 20px 24px 0; overflow-x: auto; scrollbar-width: none; justify-content: center; }
   .cat-strip::-webkit-scrollbar { display: none; }
   .cat-btn {
     background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
@@ -239,7 +234,6 @@
   </div>
 </section>
 
-<div class="quick-tags" id="quickTags"></div>
 <div class="cat-strip" id="catStrip"></div>
 
 <section class="products-section">
@@ -263,7 +257,6 @@
 
 <script>
 const CATS = ['All','Shoes','T-Shirts','Jackets/Coats','Sweaters/Hoodies','Bags','Hats/Caps','Accessories','Other'];
-const QUICK = ['Nike','Jordan','Adidas','Supreme','Gucci','Louis Vuitton','Balenciaga','Stone Island'];
 const CAT_EMOJI = {Shoes:'👟','T-Shirts':'👕','Jackets/Coats':'🧥','Sweaters/Hoodies':'🪡',Bags:'👜','Hats/Caps':'🧢',Accessories:'💎',Other:'📦'};
 let activeCat = 'All';
 
@@ -312,8 +305,6 @@ function applyTheme(t) {
 function buildCats() {
   const strip = document.getElementById('catStrip');
   strip.innerHTML = CATS.map(c => `<button class="cat-btn${activeCat===c?' active':''}" onclick="setCat('${c}')">${c}</button>`).join('');
-  const qt = document.getElementById('quickTags');
-  qt.innerHTML = QUICK.map(q => `<span class="tag" onclick="quickSearch('${q}')">${q}</span>`).join('');
 }
 
 function setCat(c) { activeCat = c; buildCats(); renderGrid(); }
@@ -385,7 +376,7 @@ function checkPromoPopup() {
         <div class="promo-body">
           <div class="promo-brand-row">
             <div class="promo-logo">
-               <span style="color:var(--accent)">${logoText.substring(0,2)}</span><br>${logoText.substring(2)}
+               <span style="color:var(--accent)">${logoText}</span>
             </div>
             <div style="display:flex; align-items:center;">
               <span class="promo-brand-name">${sitePopup.brand}</span>
@@ -402,7 +393,7 @@ function checkPromoPopup() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
           </div>
-          <a href="${sitePopup.link}" target="_blank" rel="noopener" class="promo-btn" onclick="closePromo()">
+          <a href="${sitePopup.link}" target="_blank" rel="noopener" class="promo-btn">
             ${sitePopup.btn_text} &nbsp;
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
           </a>
