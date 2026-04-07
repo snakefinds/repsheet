@@ -14,6 +14,7 @@ class AdminApp:
         
         self.items = []
         self.theme = {}
+        self.popup = {}
         
         self.setup_ui()
         self.fetch_data()
@@ -76,6 +77,23 @@ class AdminApp:
         self.t_surface = self.make_field("Surface Color (#hex):", self.theme_tab)
         
         tk.Button(self.theme_tab, text="Sync Theme to Web", command=self.sync_theme, bg="lightgreen", font=("Arial", 10, "bold")).pack(pady=20)
+        
+        # Popup Tab
+        self.popup_tab = tk.Frame(self.notebook, padx=20, pady=20)
+        self.notebook.add(self.popup_tab, text="Promo Popup")
+        
+        self.p_enabled = tk.BooleanVar()
+        tk.Checkbutton(self.popup_tab, text="Enable Promo Popup", variable=self.p_enabled).pack(anchor="w", pady=5)
+        
+        self.p_title = self.make_field("Top Title:", self.popup_tab)
+        self.p_brand = self.make_field("Brand Name:", self.popup_tab)
+        self.p_badge = self.make_field("Badge Text:", self.popup_tab)
+        self.p_desc = self.make_field("Description:", self.popup_tab)
+        self.p_code = self.make_field("Promo Code:", self.popup_tab)
+        self.p_btn = self.make_field("Button Text:", self.popup_tab)
+        self.p_link = self.make_field("Affiliate Link:", self.popup_tab)
+        
+        tk.Button(self.popup_tab, text="Sync Popup to Web", command=self.sync_popup, bg="lightgreen", font=("Arial", 10, "bold")).pack(pady=20)
 
     def make_field(self, label, parent):
         f = tk.Frame(parent, pady=3)
@@ -91,12 +109,12 @@ class AdminApp:
                 return json.load(f)
         except Exception as e:
             messagebox.showerror("File Error", f"Could not read data.json\n{e}")
-            return {"items": [], "theme": {}}
+            return {"items": [], "theme": {}, "popup": {}}
             
     def _write_data(self):
         try:
             with open(DATA_FILE, 'w', encoding='utf-8') as f:
-                json.dump({"items": self.items, "theme": self.theme}, f, indent=2)
+                json.dump({"items": self.items, "theme": self.theme, "popup": self.popup}, f, indent=2)
             return True
         except Exception as e:
             messagebox.showerror("File Error", f"Could not write to data.json\n{e}")
@@ -106,8 +124,10 @@ class AdminApp:
         data = self._read_data()
         self.items = data.get('items', [])
         self.theme = data.get('theme', {})
+        self.popup = data.get('popup', {})
         self.refresh_listbox()
         self.update_theme_inputs()
+        self.update_popup_inputs()
 
     def refresh_listbox(self):
         self.item_listbox.delete(0, tk.END)
@@ -186,15 +206,15 @@ class AdminApp:
             return
         try:
             cwd = os.path.dirname(os.path.abspath(__file__))
-            subprocess.run(["git", "add", "data.json"], check=True, cwd=cwd, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+            subprocess.run(["git", "add", "-A"], check=True, cwd=cwd, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
             res = subprocess.run(["git", "commit", "-m", "💻 Admin Panel Update: content synced"], cwd=cwd, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
             if "working tree clean" not in res.stdout and "nothing to commit" not in res.stdout:
                 subprocess.run(["git", "push"], check=True, cwd=cwd, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-                messagebox.showinfo("Vercel Sync Success", "Successfully auto-pushed data.json to GitHub! \n\nVercel will now deploy your site changes automatically.")
+                messagebox.showinfo("Vercel Sync Success", "Successfully auto-pushed changes to GitHub! \n\nVercel will now deploy your site updates automatically.")
             else:
-                messagebox.showinfo("No Changes", "No new changes detected in data.json to push.")
+                messagebox.showinfo("No Changes", "No new changes detected to push.")
         except Exception as e:
-            messagebox.showwarning("Git Auto-Push Failed", f"Your changes were saved locally to data.json, but GitHub auto-push failed.\n\nAre you sure Git is initialized?\nError details: {e}")
+            messagebox.showwarning("Git Auto-Push Failed", f"Your changes were saved locally, but GitHub auto-push failed.\n\nAre you sure Git is initialized?\nError details: {e}")
 
     def sync_items(self):
         if self._write_data():
@@ -225,6 +245,35 @@ class AdminApp:
                 self.git_auto_push()
             else:
                 messagebox.showinfo("Saved", "Theme successfully saved to local data.json!")
+
+    def update_popup_inputs(self):
+        p = self.popup
+        self.p_enabled.set(p.get('enabled', False))
+        self.p_title.set(p.get('title', ''))
+        self.p_brand.set(p.get('brand', ''))
+        self.p_badge.set(p.get('badge', ''))
+        self.p_desc.set(p.get('desc', ''))
+        self.p_code.set(p.get('code', ''))
+        self.p_btn.set(p.get('btn_text', ''))
+        self.p_link.set(p.get('link', ''))
+
+    def sync_popup(self):
+        data = {
+            "enabled": self.p_enabled.get(),
+            "title": self.p_title.get(),
+            "brand": self.p_brand.get(),
+            "badge": self.p_badge.get(),
+            "desc": self.p_desc.get(),
+            "code": self.p_code.get(),
+            "btn_text": self.p_btn.get(),
+            "link": self.p_link.get()
+        }
+        self.popup = data
+        if self._write_data():
+            if self.use_git_var.get():
+                self.git_auto_push()
+            else:
+                messagebox.showinfo("Saved", "Popup settings successfully saved to local data.json!")
 
 if __name__ == "__main__":
     root = tk.Tk()

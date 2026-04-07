@@ -143,6 +143,68 @@
   footer { border-top: 1px solid var(--border); padding: 24px; text-align: center; color: var(--muted); font-size: 12px; }
   footer a { color: var(--accent); text-decoration: none; }
 
+  /* PROMO MODAL */
+  .promo-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+    z-index: 9999; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 20px;
+  }
+  .promo-modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .promo-modal {
+    background: #111; border: 1px solid #222; border-radius: 20px;
+    width: 100%; max-width: 400px; overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    transform: translateY(20px) scale(0.95); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .promo-modal-overlay.active .promo-modal { transform: translateY(0) scale(1); }
+  
+  .promo-header {
+    background: #1a1114; padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #222;
+  }
+  .promo-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; font-style: italic; display: flex; align-items: center; gap: 8px;}
+  .promo-title span { color: #f94c7b; }
+  .promo-close {
+    background: #222; border: none; color: #888; width: 28px; height: 28px;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, color 0.2s; font-size: 14px;
+  }
+  .promo-close:hover { background: #333; color: #fff; }
+  
+  .promo-body { padding: 24px 20px; }
+  .promo-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .promo-logo { 
+    width: 44px; height: 44px; border-radius: 10px; background: #fff; 
+    border: 2px solid #ff7700; display: flex; align-items: center; justify-content: center; 
+    font-weight: bold; color: #000; font-size: 11px; text-align: center; line-height: 1.1; 
+  }
+  .promo-brand-name { font-size: 18px; font-weight: 700; color: #fff; }
+  .promo-badge { background: #f94c7b; color: #fff; font-size: 9px; font-weight: 700; padding: 4px 6px; border-radius: 4px; letter-spacing: 1px; margin-left: 8px; }
+  .promo-desc { color: #999; font-size: 12px; line-height: 1.5; margin-bottom: 20px; font-style: italic; }
+  
+  .promo-code-box {
+    background: #080808; border: 1px solid #222; border-radius: 12px; padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+  }
+  .promo-code-label { font-size: 10px; color: #666; font-weight: 700; margin-bottom: 4px; letter-spacing: 1px; text-transform: uppercase; }
+  .promo-code-val { font-size: 18px; font-weight: 700; color: #fff; }
+  .promo-copy {
+    background: transparent; border: none; color: #888; cursor: pointer; padding: 6px;
+    transition: color 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .promo-copy:hover { color: #fff; }
+  
+  .promo-btn {
+    display: flex; align-items: center; justify-content: center; width: 100%;
+    background: #e86383; color: #fff; text-decoration: none; padding: 14px;
+    border-radius: 10px; font-size: 14px; font-weight: 700; transition: transform 0.2s, background 0.2s;
+  }
+  .promo-btn:hover { background: #fa7294; }
+  .promo-btn:active { transform: scale(0.98); }
+
   @media (max-width: 600px) {
     .nav-links { display: none; }
     .hero { padding: 40px 16px 28px; }
@@ -193,6 +255,8 @@
   <p>© 2026 REPFINDS &nbsp;·&nbsp; For educational purposes only.</p>
 </footer>
 
+<div id="promoModalContainer"></div>
+
 <script>
 const CATS = ['All','Shoes','T-Shirts','Jackets/Coats','Sweaters/Hoodies','Bags','Hats/Caps','Accessories','Other'];
 const QUICK = ['Nike','Jordan','Adidas','Supreme','Gucci','Louis Vuitton','Balenciaga','Stone Island'];
@@ -201,6 +265,7 @@ let activeCat = 'All';
 
 let allItems = [];
 let siteTheme = {};
+let sitePopup = {};
 
 async function loadData() {
   try {
@@ -209,9 +274,11 @@ async function loadData() {
     const data = await res.json();
     allItems = data.items || [];
     siteTheme = data.theme || {};
+    sitePopup = data.popup || {};
     applyTheme(siteTheme);
     buildCats();
     renderGrid();
+    checkPromoPopup();
   } catch (err) {
     console.error('Error loading data', err);
   }
@@ -278,6 +345,85 @@ function renderGrid() {
       </div>
     </div>`;
   }).join('');
+}
+
+function checkPromoPopup() {
+  if (!sitePopup.enabled) return;
+  if (sessionStorage.getItem('promo_seen')) return;
+
+  const titleParts = (sitePopup.title || 'PROMO').split(' ');
+  const titleHtml = titleParts.length > 1 
+    ? `${titleParts[0]} <span>${titleParts.slice(1).join(' ')}</span>`
+    : sitePopup.title;
+
+  const logoText = (sitePopup.brand || 'B').substring(0, 4);
+
+  const container = document.getElementById('promoModalContainer');
+  container.innerHTML = `
+    <div class="promo-modal-overlay" id="promoOverlay" onclick="closePromoFromOutside(event)">
+      <div class="promo-modal">
+        <div class="promo-header">
+          <div class="promo-title">⚡ ${titleHtml}</div>
+          <button class="promo-close" onclick="closePromo()">✕</button>
+        </div>
+        <div class="promo-body">
+          <div class="promo-brand-row">
+            <div class="promo-logo">
+               <span style="color:#e86383">${logoText.substring(0,2)}</span><br>${logoText.substring(2)}
+            </div>
+            <div style="display:flex; align-items:center;">
+              <span class="promo-brand-name">${sitePopup.brand}</span>
+              <span class="promo-badge">${sitePopup.badge}</span>
+            </div>
+          </div>
+          <div class="promo-desc">${sitePopup.desc}</div>
+          <div class="promo-code-box">
+            <div>
+              <div class="promo-code-label">CODE</div>
+              <div class="promo-code-val" id="promoCodeVal">${sitePopup.code}</div>
+            </div>
+            <button class="promo-copy" onclick="copyPromo()" title="Copy Code">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+          <a href="${sitePopup.link}" target="_blank" rel="noopener" class="promo-btn" onclick="closePromo()">
+            ${sitePopup.btn_text} &nbsp;
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  setTimeout(() => {
+    document.getElementById('promoOverlay').classList.add('active');
+  }, 100);
+}
+
+function closePromoFromOutside(e) {
+  if (e.target.id === 'promoOverlay') {
+    closePromo();
+  }
+}
+
+function closePromo() {
+  const overlay = document.getElementById('promoOverlay');
+  if(overlay) overlay.classList.remove('active');
+  sessionStorage.setItem('promo_seen', 'true');
+  setTimeout(() => {
+    document.getElementById('promoModalContainer').innerHTML = '';
+  }, 400);
+}
+
+function copyPromo() {
+  const code = document.getElementById('promoCodeVal').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('.promo-copy');
+    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2dff9b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+    }, 2000);
+  });
 }
 
 loadData();
