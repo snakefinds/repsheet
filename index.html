@@ -106,14 +106,6 @@
   .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
   .card:hover .card-img-wrap img { transform: scale(1.04); }
   .card-emoji { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 40px; }
-  .card-badge {
-    position: absolute; top: 8px; left: 8px;
-    background: var(--accent); color: #fff;
-    font-size: 9px; font-weight: 600; letter-spacing: 1px;
-    padding: 3px 8px; border-radius: 3px; text-transform: uppercase;
-  }
-  .card-badge.hot { background: #ff6b2d; }
-  .card-badge.new { background: #2dff9b; color: #000; }
   .card-body { padding: 12px 14px 8px; flex: 1; }
   .card-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-cat { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
@@ -316,12 +308,12 @@ function renderGrid() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const sort = document.getElementById('sortSel').value;
   let filtered = items.filter(it =>
-    (activeCat === 'All' || it.cat === activeCat) &&
-    (!q || it.name.toLowerCase().includes(q) || it.cat.toLowerCase().includes(q))
+    (activeCat === 'All' || it.category === activeCat) &&
+    (!q || it.title.toLowerCase().includes(q) || it.category.toLowerCase().includes(q))
   );
-  if (sort === 'price-asc') filtered.sort((a,b) => a.price - b.price);
-  else if (sort === 'price-desc') filtered.sort((a,b) => b.price - a.price);
-  else if (sort === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+  if (sort === 'price-asc') filtered.sort((a,b) => parseFloat(a.price) - parseFloat(b.price));
+  else if (sort === 'price-desc') filtered.sort((a,b) => parseFloat(b.price) - parseFloat(a.price));
+  else if (sort === 'name') filtered.sort((a,b) => a.title.localeCompare(b.title));
 
   document.getElementById('countEl').textContent = `(${filtered.length})`;
   const grid = document.getElementById('grid');
@@ -330,26 +322,24 @@ function renderGrid() {
     return;
   }
   grid.innerHTML = filtered.map(it => {
-    const badgeClass = it.badge === 'HOT' ? 'hot' : it.badge === 'NEW' ? 'new' : '';
     const imgContent = it.img
-      ? `<img src="${it.img}" alt="${it.name}" onerror="this.parentNode.innerHTML='<div class=card-emoji>${CAT_EMOJI[it.cat]||'📦'}</div>'">`
-      : `<div class="card-emoji">${CAT_EMOJI[it.cat]||'📦'}</div>`;
+      ? `<img src="${it.img}" alt="${it.title}" onerror="this.parentNode.innerHTML='<div class=card-emoji>${CAT_EMOJI[it.category]||'📦'}</div>'">`
+      : `<div class="card-emoji">${CAT_EMOJI[it.category]||'📦'}</div>`;
     
     const localPrice = (parseFloat(it.price) * RATES[currentCurrency]).toFixed(2);
     
     return `<div class="card">
       <div class="card-img-wrap">
         ${imgContent}
-        ${it.badge ? `<div class="card-badge ${badgeClass}">${it.badge}</div>` : ''}
       </div>
       <div class="card-body">
-        <div class="card-name" title="${it.name}">${it.name}</div>
-        <div class="card-cat">${it.cat}</div>
+        <div class="card-name" title="${it.title}">${it.title}</div>
+        <div class="card-cat">${it.category}</div>
         <div class="card-price">${SYMBOLS[currentCurrency]}${localPrice} <span>${currentCurrency}</span></div>
       </div>
       <div class="card-footer" style="display: flex; gap: 8px;">
-        <a class="btn-buy" href="${it.link}" target="_blank" rel="noopener" style="flex: 1;">🛒 Buy Now</a>
-        ${it.qc_link ? `<a class="btn-buy" href="${it.qc_link}" target="_blank" rel="noopener" style="flex: 0; padding: 9px 16px; background: #333;" title="View QC Images">📸 QC</a>` : ''}
+        <a class="btn-buy" href="${it.kakobuy}" target="_blank" rel="noopener" style="flex: 1;">🛒 Buy Now</a>
+        ${it.picksly ? `<a class="btn-buy" href="${it.picksly}" target="_blank" rel="noopener" style="flex: 0; padding: 9px 16px; background: #333;" title="View QC Images">📸 QC</a>` : ''}
       </div>
     </div>`;
   }).join('');

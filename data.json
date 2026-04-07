@@ -1,69 +1,56 @@
 {
   "items": [
     {
-      "name": "Jordan 4s [MID BATCH]",
-      "cat": "Shoes",
-      "price": 31.6,
-      "link": "https://ikako.vip/qbwyq",
-      "qc_link": "https://picks.ly/item/WD7614443306",
-      "img": "https://m.media-amazon.com/images/I/51ub4Zbj4cL.jpg",
-      "badge": "FEATURED",
-      "id": 1
+      "id": 1,
+      "title": "Jordan 4s",
+      "category": "Shoes",
+      "price": "31.60",
+      "kakobuy": "https://ikako.vip/qbwyq",
+      "picksly": "https://picks.ly/item/WD7614443306",
+      "img": "https://m.media-amazon.com/images/I/51ub4Zbj4cL.jpg"
     },
     {
-      "name": "Penis",
-      "cat": "Shoes",
-      "price": 65,
-      "link": "#",
-      "img": "",
-      "badge": "BEST BATCH",
-      "id": 2
+      "id": 2,
+      "title": "Playboi Carti Cat Tee",
+      "category": "T-Shirts",
+      "price": "12.00",
+      "kakobuy": "#",
+      "picksly": "",
+      "img": ""
     },
     {
       "id": 3,
-      "name": "Playboi Carti Cat Tee",
-      "cat": "T-Shirts",
-      "price": 12,
-      "link": "#",
-      "img": "",
-      "badge": "HOT"
+      "title": "Supreme Box Logo Tee",
+      "category": "T-Shirts",
+      "price": "18.00",
+      "kakobuy": "#",
+      "picksly": "",
+      "img": ""
     },
     {
       "id": 4,
-      "name": "Arcteryx Beanie",
-      "cat": "Hats/Caps",
-      "price": 1.82,
-      "link": "#",
-      "img": "",
-      "badge": ""
+      "title": "Arcteryx Beanie",
+      "category": "Hats/Caps",
+      "price": "1.82",
+      "kakobuy": "#",
+      "picksly": "",
+      "img": ""
     },
     {
       "id": 5,
-      "name": "Supreme Box Logo Tee",
-      "cat": "T-Shirts",
-      "price": 18,
-      "link": "#",
-      "img": "",
-      "badge": "NEW"
+      "title": "Louis Vuitton Speedy Bag",
+      "category": "Bags",
+      "price": "88.00",
+      "kakobuy": "#",
+      "picksly": "",
+      "img": ""
     },
     {
-      "id": 6,
-      "name": "Louis Vuitton Speedy Bag",
-      "cat": "Bags",
-      "price": 88,
-      "link": "#",
+      "title": "Kakobuy - The Best Taobao Agent Help You Shop,Shipping From China -weidian agent|1688agent \u2013 Cross-border E-commerce for wholesale & retail from China to the world, B2B and B2C online marketplace",
       "img": "",
-      "badge": "BEST BATCH"
-    },
-    {
-      "name": "Fuck you kevin",
-      "cat": "Shoes",
-      "price": 6767.0,
-      "link": "https://pornhub.com",
-      "qc_link": "",
-      "img": "",
-      "badge": "",
-      "id": 7
+      "price": "",
+      "kakobuy": "https://ikako.vip/r5jrd",
+      "id": 6
     }
   ],
   "theme": {
