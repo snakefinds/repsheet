@@ -23,6 +23,38 @@ From repo root:
 python -m pip install -r gsheet_scraper/requirements.txt
 ```
 
+## Desktop app (easy mode)
+
+Run the UI and paste your **sheet link + API key**, then click **Scrape**:
+
+```bash
+python -m gsheet_scraper.desktop_app
+```
+
+## Add picks.ly from existing JSON (no spreadsheet)
+
+After you have `sheet_scrape.json`, add `picksly` without touching Google Sheets:
+
+**Desktop UI**
+
+```bash
+python -m gsheet_scraper.desktop_app_picksly_json
+```
+
+**CLI**
+
+```bash
+python -m gsheet_scraper.picksly_json sheet_scrape.json -o sheet_scrape_with_picksly.json
+```
+
+## Desktop app (with picks.ly, re-scrapes sheet)
+
+This UI scrapes the sheet and adds `picksly` in one step (optional):
+
+```bash
+python -m gsheet_scraper.desktop_app_picksly
+```
+
 ## Usage (public sheet)
 
 ```bash

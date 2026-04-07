@@ -9,7 +9,7 @@ import re
 import sys
 from dataclasses import dataclass
 from typing import Any, Iterable
-from urllib.parse import parse_qs, quote, urlencode, urlparse, urlunparse
+from urllib.parse import parse_qs, quote, unquote, urlencode, urlparse, urlunparse
 
 import requests
 
@@ -137,6 +137,40 @@ def normalize_kakobuy_link(url: str, *, affcode: str) -> str:
     return final
 
 
+def build_picksly_from_kakobuy_url(kakobuy_url: str) -> str:
+    """
+    Kakobuy item pages often include the source marketplace URL as `?url=<encoded>`.
+    We decode it and build the picks.ly QC link:
+    - weidian → WD<itemID>
+    - taobao/tmall → TB<id>
+    - 1688 → ALI<offerId>
+    """
+    u = (kakobuy_url or "").strip()
+    if not u or "kakobuy.com" not in u:
+        return ""
+    try:
+        p = urlparse(u)
+        qs = parse_qs(p.query)
+        src = qs.get("url", [""])[0]
+        source_url = unquote(src) if src else ""
+    except Exception:
+        source_url = ""
+
+    if not source_url:
+        return ""
+
+    if "weidian.com" in source_url:
+        m = re.search(r"itemID[=\s]*(\d+)", source_url)
+        return f"https://picks.ly/item/WD{m.group(1)}" if m else ""
+    if "taobao.com" in source_url or "tmall.com" in source_url:
+        m = re.search(r"[?&]id=(\d+)", source_url)
+        return f"https://picks.ly/item/TB{m.group(1)}" if m else ""
+    if "1688.com" in source_url:
+        m = re.search(r"/offer/(\d+)", source_url)
+        return f"https://picks.ly/item/ALI{m.group(1)}" if m else ""
+    return ""
+
+
 @dataclass(frozen=True)
 class ServiceAccountConfig:
     credentials_path: str
@@ -200,26 +234,43 @@ def _fetch_rows_api_key(
     from googleapiclient.discovery import build
 
     svc = build("sheets", "v4", developerKey=api_key, cache_discovery=False)
+
+    # 1) Fetch lightweight metadata to pick the target sheet title.
     meta = (
         svc.spreadsheets()
-        .get(spreadsheetId=sheet_id, includeGridData=True)
+        .get(spreadsheetId=sheet_id, fields="sheets(properties(title))")
         .execute()
     )
-    sheets = meta.get("sheets") or []
-    if not sheets:
+    sheets_meta = meta.get("sheets") or []
+    if not sheets_meta:
         raise RuntimeError("Spreadsheet has no tabs/sheets.")
 
     if sheet_name:
-        target = None
-        for s in sheets:
-            title = (s.get("properties") or {}).get("title")
-            if title == sheet_name:
-                target = s
-                break
-        if target is None:
+        target_title = sheet_name
+        if not any(((s.get("properties") or {}).get("title") == target_title) for s in sheets_meta):
             raise RuntimeError(f"Sheet tab not found: {sheet_name}")
     else:
-        target = sheets[0]
+        target_title = (sheets_meta[0].get("properties") or {}).get("title") or "Sheet1"
+
+    # 2) Fetch grid data for only the target sheet to avoid API truncation.
+    grid_resp = (
+        svc.spreadsheets()
+        .get(
+            spreadsheetId=sheet_id,
+            ranges=target_title,
+            includeGridData=True,
+            fields=(
+                "sheets(properties(title),data(rowData(values("
+                "formattedValue,hyperlink,textFormatRuns(format(link(uri)))"
+                "))))"
+            ),
+        )
+        .execute()
+    )
+    sheets = grid_resp.get("sheets") or []
+    target = sheets[0] if sheets else None
+    if not target:
+        return []
 
     grid = (target.get("data") or [])
     if not grid:
@@ -295,26 +346,41 @@ def _fetch_rows_oauth(
             f.write(creds.to_json())
 
     svc = build("sheets", "v4", credentials=creds, cache_discovery=False)
+
     meta = (
         svc.spreadsheets()
-        .get(spreadsheetId=sheet_id, includeGridData=True)
+        .get(spreadsheetId=sheet_id, fields="sheets(properties(title))")
         .execute()
     )
-    sheets = meta.get("sheets") or []
-    if not sheets:
+    sheets_meta = meta.get("sheets") or []
+    if not sheets_meta:
         raise RuntimeError("Spreadsheet has no tabs/sheets.")
 
     if sheet_name:
-        target = None
-        for s in sheets:
-            title = (s.get("properties") or {}).get("title")
-            if title == sheet_name:
-                target = s
-                break
-        if target is None:
+        target_title = sheet_name
+        if not any(((s.get("properties") or {}).get("title") == target_title) for s in sheets_meta):
             raise RuntimeError(f"Sheet tab not found: {sheet_name}")
     else:
-        target = sheets[0]
+        target_title = (sheets_meta[0].get("properties") or {}).get("title") or "Sheet1"
+
+    grid_resp = (
+        svc.spreadsheets()
+        .get(
+            spreadsheetId=sheet_id,
+            ranges=target_title,
+            includeGridData=True,
+            fields=(
+                "sheets(properties(title),data(rowData(values("
+                "formattedValue,hyperlink,textFormatRuns(format(link(uri)))"
+                "))))"
+            ),
+        )
+        .execute()
+    )
+    sheets = grid_resp.get("sheets") or []
+    target = sheets[0] if sheets else None
+    if not target:
+        return []
 
     grid = (target.get("data") or [])
     if not grid:
@@ -413,26 +479,64 @@ def _grid_to_items(
     if not grid_rows:
         return []
 
-    header = grid_rows[0]
+    # Find the first row that looks like a header (contains product/price/link/image labels).
+    header_row_idx = 0
+    for ri, r in enumerate(grid_rows[:25]):  # look near top only
+        norm = [_normalize_header_from_cell(c) for c in r]
+        score = 0
+        for h in norm:
+            if "product" in h:
+                score += 2
+            if "price" in h:
+                score += 2
+            if "kakobuy" in h or h.endswith("link"):
+                score += 1
+            if "image" in h or "img" in h:
+                score += 1
+        if score >= 4:
+            header_row_idx = ri
+            break
+
+    header = grid_rows[header_row_idx]
+    width = len(header)
     norm_headers = [_normalize_header_from_cell(c) for c in header]
 
-    # Find repeated groups by locating "product" columns.
+    def has_word(h: str, word: str) -> bool:
+        # headers are already normalized to alnum only; use substring match
+        return word in (h or "")
+
+    def is_kakobuy_col(h: str) -> bool:
+        return has_word(h, "kakobuy") or (has_word(h, "link") and not has_word(h, "image"))
+
+    def is_price_col(h: str) -> bool:
+        return has_word(h, "price") or has_word(h, "usd") or has_word(h, "cost")
+
+    def is_image_col(h: str) -> bool:
+        return has_word(h, "image") or has_word(h, "img") or has_word(h, "photo") or has_word(h, "pic")
+
+    def is_product_col(h: str) -> bool:
+        return has_word(h, "product") or has_word(h, "title") or has_word(h, "item") or has_word(h, "name")
+
+    # Find repeated groups by locating product-like columns (your sheet has "🔥...PRODUCT" etc).
     groups: list[dict[str, int]] = []
     for i, h in enumerate(norm_headers):
-        if h != "product":
+        if not is_product_col(h):
             continue
-        # Look ahead in the next ~6 cells for kakobuy link / price / image
-        window = norm_headers[i : i + 8]
+
+        # Look ahead in the next ~10 cells for kakobuy link / price / image
+        window = norm_headers[i : i + 12]
         g: dict[str, int] = {"title": i}
         for j, wh in enumerate(window):
             idx = i + j
-            if wh in {"kakobuylink", "kakobuylink", "kakobuy", "link", "url"} and "kakobuy" not in g:
+            if is_kakobuy_col(wh) and "kakobuy" not in g:
                 g["kakobuy"] = idx
-            if wh in {"price"} and "price" not in g:
+            if is_price_col(wh) and "price" not in g:
                 g["price"] = idx
-            if wh in {"image", "img", "imageurl", "photourl", "photo", "pic"} and "img" not in g:
+            if is_image_col(wh) and "img" not in g:
                 g["img"] = idx
-        if "kakobuy" in g or "price" in g or "img" in g:
+
+        # Only accept if it looks like a real group (has at least kakobuy or price)
+        if "kakobuy" in g or "price" in g:
             groups.append(g)
 
     # Fallback: try the simple header mapping if no groups found.
@@ -443,7 +547,10 @@ def _grid_to_items(
 
     items: list[dict[str, str]] = []
 
-    for row in grid_rows[1:]:
+    for row in grid_rows[header_row_idx + 1 :]:
+        # Sheets API returns ragged rows; pad so column indexes are stable.
+        if len(row) < width:
+            row = row + [{"text": "", "hyperlink": ""} for _ in range(width - len(row))]
         for g in groups:
             def get_text(key: str) -> str:
                 i = g.get(key)
@@ -492,7 +599,7 @@ def _grid_to_items(
             items.append(item)
 
     # Drop rows with no title (usually filler)
-    items = [it for it in items if it.get("title")]
+    items = [it for it in items if (it.get("title") or "").strip()]
     return items
 
 
