@@ -67,12 +67,11 @@
     }
   ],
   "theme": {
-    "scheme": 4,
+    "siteName": "SnakeFinds",
+    "tagline": "",
     "accent": "#ff8c2d",
     "bg": "#0f0d0a",
-    "surface": "#1a1612",
-    "siteName": "SnakeFinds",
-    "tagline": ""
+    "surface": "#1a1612"
   },
   "popup": {
     "enabled": true,
