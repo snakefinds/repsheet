@@ -424,7 +424,7 @@ class AdminApp:
 
         tk.Label(
             wrap,
-            text="Other pages: {\"footer\": \"…\", \"finds\": { \"heroEyebrow\", \"heroLine1\", \"heroLine2\", \"heroSub\", \"searchPlaceholder\" } }",
+            text="Other pages: footer, finds (catalog hero), howToBuy (guide: hero lines, steps[] with title, image, checklist/tips/bullets, cta, couponBox, finalCta). See how-to-buy.html + data.json pages.howToBuy.",
             font=("Arial", 9), fg="gray", wraplength=880, justify="left",
         ).pack(anchor="w")
         self.txt_pages = tk.Text(wrap, height=9, font=("Courier", 9), wrap=tk.NONE)

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Buy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #e66386;
+    --bg: #030712;
+    --surface: #0d111c;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #fff;
+    --muted: #9ca3af;
+    --muted2: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { color-scheme: dark; scroll-behavior: smooth; }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* floating circles (lightweight) */
+  .bg-area { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .bg-circles { position: absolute; inset: 0; }
+  .bg-circles li {
+    position: absolute; display: block; list-style: none;
+    width: 20px; height: 20px; background: rgba(230, 99, 134, 0.08);
+    bottom: -150px; animation: floatUp 22s linear infinite;
+    border-radius: 50%;
+  }
+  .bg-circles li:nth-child(1) { left: 10%; width: 80px; height: 80px; animation-delay: 0s; }
+  .bg-circles li:nth-child(2) { left: 22%; width: 28px; height: 28px; animation-delay: 2s; animation-duration: 18s; }
+  .bg-circles li:nth-child(3) { left: 38%; width: 48px; height: 48px; animation-delay: 4s; }
+  .bg-circles li:nth-child(4) { left: 55%; width: 64px; height: 64px; animation-delay: 0s; animation-duration: 26s; }
+  .bg-circles li:nth-child(5) { left: 70%; width: 36px; height: 36px; animation-delay: 3s; }
+  .bg-circles li:nth-child(6) { left: 85%; width: 90px; height: 90px; animation-delay: 5s; animation-duration: 24s; }
+  .bg-circles li:nth-child(7) { left: 15%; width: 44px; height: 44px; animation-delay: 7s; bottom: -100px; }
+  .bg-circles li:nth-child(8) { left: 45%; width: 24px; height: 24px; animation-delay: 10s; }
+  .bg-circles li:nth-child(9) { left: 65%; width: 56px; height: 56px; animation-delay: 6s; }
+  .bg-circles li:nth-child(10) { left: 92%; width: 32px; height: 32px; animation-delay: 8s; }
+  @keyframes floatUp {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-120vh) rotate(720deg); opacity: 0; }
+  }
+
+  nav.htb-nav {
+    position: sticky; top: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 clamp(16px, 3vw, 28px); height: 60px;
+    background: rgba(3, 7, 18, 0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .htb-nav-logo {
+    font-family: 'Montserrat', sans-serif; font-weight: 800; font-style: italic;
+    font-size: clamp(16px, 2.2vw, 22px); color: var(--accent); text-decoration: none;
+  }
+  .nav-mobile-toggle {
+    display: none; width: 44px; height: 44px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;
+  }
+  .nav-desktop-wrap { flex: 1; display: flex; justify-content: center; min-width: 0; }
+  .nav-links-desktop { display: flex; gap: clamp(12px, 2vw, 22px); flex-wrap: wrap; justify-content: center; }
+  .nav-link { color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .nav-link:hover, .nav-link.active { color: var(--accent); }
+  .nav-drawer {
+    display: none; position: fixed; top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(3, 7, 18, 0.98); z-index: 35; flex-direction: column; padding: 20px; gap: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .nav-drawer.open { display: flex; }
+  .nav-drawer .nav-link { padding: 14px; border-radius: 10px; border: 1px solid var(--border); font-size: 14px; }
+  @media (max-width: 900px) {
+    .nav-mobile-toggle { display: flex; align-items: center; justify-content: center; }
+    .nav-desktop-wrap { display: none; }
+  }
+
+  .htb-main { position: relative; z-index: 1; padding-bottom: 80px; }
+
+  .htb-hero {
+    position: relative; text-align: center; padding: clamp(48px, 10vw, 80px) 24px 56px;
+    overflow: hidden;
+  }
+  .htb-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(230, 99, 134, 0.15), transparent 65%);
+    pointer-events: none;
+  }
+  .htb-hero h1 {
+    position: relative;
+    font-family: 'Montserrat', sans-serif; font-weight: 800; font-style: italic;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    letter-spacing: -0.04em; margin-bottom: 16px;
+  }
+  .htb-hero h1 .accent { color: var(--accent); }
+  .htb-hero p {
+    position: relative; color: var(--muted); font-size: clamp(15px, 2vw, 18px);
+    max-width: 36rem; margin: 0 auto; line-height: 1.6;
+  }
+
+  .htb-track-wrap {
+    max-width: 64rem; margin: 0 auto; padding: 0 24px; position: relative;
+  }
+  .htb-timeline {
+    position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+    background: linear-gradient(to bottom, var(--accent), transparent);
+    transform: translateX(-50%); display: none;
+  }
+  @media (min-width: 768px) { .htb-timeline { display: block; } }
+
+  .htb-step {
+    display: flex; flex-direction: column; align-items: center; gap: clamp(32px, 5vw, 48px);
+    margin-bottom: clamp(64px, 12vw, 128px);
+  }
+  @media (min-width: 768px) {
+    .htb-step { flex-direction: row; }
+    .htb-step.reverse { flex-direction: row-reverse; }
+  }
+  .htb-step-copy, .htb-step-media { flex: 1; width: 100%; min-width: 0; }
+  .htb-step-head { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .htb-icon-circle {
+    width: 48px; height: 48px; border-radius: 50%; background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px rgba(230, 99, 134, 0.4); color: #000; flex-shrink: 0;
+  }
+  .htb-icon-circle svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .htb-step-num { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--accent); }
+  .htb-step-copy h2 { font-size: clamp(1.5rem, 3vw, 1.875rem); font-weight: 700; margin-bottom: 8px; }
+  .htb-sub { color: var(--accent); font-weight: 600; margin-bottom: 24px; font-size: 15px; }
+
+  .htb-check {
+    display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.05);
+    padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 10px;
+  }
+  .htb-check svg { flex-shrink: 0; color: var(--accent); }
+  .htb-check span { font-size: 14px; color: #d1d5db; }
+
+  .htb-tip {
+    border-left: 2px solid var(--accent); padding-left: 16px; margin-bottom: 16px;
+  }
+  .htb-tip h4 { font-weight: 700; margin-bottom: 4px; font-size: 15px; }
+  .htb-tip p { font-size: 13px; color: var(--muted2); }
+
+  .htb-bullets { list-style: none; margin-bottom: 24px; }
+  .htb-bullets li {
+    display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted); margin-bottom: 14px;
+  }
+  .htb-bullets li::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    margin-top: 7px; flex-shrink: 0;
+  }
+
+  .htb-cta {
+    display: inline-flex; align-items: center; gap: 10px; margin-top: 8px;
+    background: var(--accent); color: #000; font-weight: 800; font-size: 14px;
+    padding: 12px 22px; border-radius: 12px; text-decoration: none;
+    transition: transform 0.2s;
+  }
+  .htb-cta:hover { transform: scale(1.03); }
+  .htb-cta svg { width: 18px; height: 18px; stroke: currentColor; }
+
+  .htb-media-wrap { position: relative; }
+  .htb-media-wrap::before {
+    content: ''; position: absolute; inset: -8px; border-radius: 2rem;
+    background: rgba(230, 99, 134, 0.2); filter: blur(16px); opacity: 0; transition: opacity 0.3s;
+  }
+  .htb-media-wrap:hover::before { opacity: 1; }
+  .htb-media-wrap img {
+    position: relative; width: 100%; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45); display: block;
+    transition: transform 0.4s;
+  }
+  .htb-media-wrap:hover img { transform: scale(1.02); }
+
+  .htb-placeholder {
+    aspect-ratio: 16/10; border-radius: 16px; border: 1px dashed rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center;
+    padding: 32px; text-align: center; color: var(--muted2); font-style: italic; font-size: 14px;
+  }
+
+  .htb-coupon-wrap {
+    background: linear-gradient(90deg, var(--accent), #ff8da1);
+    padding: 1px; border-radius: 16px; margin-bottom: 20px;
+  }
+  .htb-coupon-inner {
+    background: #0d0d0d; border-radius: 15px; padding: 24px; text-align: center;
+  }
+  .htb-coupon-inner .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted2); font-weight: 700; margin-bottom: 8px; }
+  .htb-coupon-inner .code { font-size: clamp(2rem, 5vw, 2.5rem); font-weight: 800; letter-spacing: 0.12em; margin-bottom: 8px; }
+  .htb-coupon-inner .sub { color: var(--accent); font-weight: 700; font-size: 14px; }
+
+  .htb-protip {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25);
+    padding: 16px; border-radius: 12px; font-size: 14px; color: #bfdbfe;
+  }
+  .htb-protip strong { color: #60a5fa; }
+
+  .htb-bottom-cta {
+    max-width: 56rem; margin: 48px auto 0; padding: 0 24px;
+  }
+  .htb-bottom-inner {
+    background: var(--accent); border-radius: 2rem; padding: clamp(40px, 8vw, 48px);
+    text-align: center; color: #000; position: relative; overflow: hidden;
+  }
+  .htb-bottom-inner::before {
+    content: ''; position: absolute; top: 0; right: 0; width: 16rem; height: 16rem;
+    background: rgba(255, 255, 255, 0.2); border-radius: 50%; filter: blur(48px);
+    transform: translate(40%, -40%);
+  }
+  .htb-bottom-inner h2 {
+    font-family: 'Montserrat', sans-serif; font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 800; margin-bottom: 16px; position: relative; z-index: 1;
+  }
+  .htb-bottom-inner > p { font-weight: 700; opacity: 0.85; margin-bottom: 28px; position: relative; z-index: 1; }
+  .htb-bottom-inner a {
+    display: inline-block; background: #000; color: #fff; padding: 16px 36px; border-radius: 999px;
+    font-weight: 800; font-size: 16px; text-decoration: none; position: relative; z-index: 1;
+    transition: background 0.2s;
+  }
+  .htb-bottom-inner a:hover { background: #1a1a1a; }
+
+  footer.htb-foot {
+    margin-top: 64px; padding: 48px 24px; border-top: 1px solid rgba(31, 41, 55, 1);
+    text-align: center; color: var(--muted2); font-size: 12px; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="bg-area"><ul class="bg-circles"><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ul></div>
+
+<nav class="htb-nav">
+  <a class="htb-nav-logo" href="index.html" id="htbLogo">SNAKEFINDS</a>
+  <button type="button" class="nav-mobile-toggle" aria-label="Menu" id="htbNavToggle">☰</button>
+  <div class="nav-desktop-wrap">
+    <div class="nav-links-desktop" id="htbNavDesk"></div>
+  </div>
+</nav>
+<div class="nav-drawer" id="htbNavDrawer"></div>
+
+<main class="htb-main">
+  <section class="htb-hero">
+    <h1><span id="htbHeroL1">HOW TO</span> <span class="accent" id="htbHeroAccent">BUY</span></h1>
+    <p id="htbHeroSub">Follow our simple 5-step guide to get quality finds delivered using your favorite agent.</p>
+  </section>
+
+  <div class="htb-track-wrap">
+    <div class="htb-timeline" aria-hidden="true"></div>
+    <div id="htbSteps"></div>
+  </div>
+
+  <section class="htb-bottom-cta" id="htbFinalSection" hidden>
+    <div class="htb-bottom-inner">
+      <h2 id="htbFinalTitle">READY TO START YOUR HAUL?</h2>
+      <p id="htbFinalSub">Join thousands of users getting the best deals every day.</p>
+      <a href="#" id="htbFinalBtn">CREATE ACCOUNT</a>
+    </div>
+  </section>
+</main>
+
+<footer class="htb-foot" id="htbFooter"></footer>
+
+<script src="site-shell.js"></script>
+<script>
+(function () {
+  const ICONS = {
+    'user-plus': '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>',
+    search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+    cart: '<svg viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>',
+    plane: '<svg viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>',
+    ticket: '<svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 1 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M9 9h.01"/><path d="m15 9-6 6"/><path d="M15 15h.01"/></svg>',
+  };
+
+  function esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  }
+
+  function safeImgSrc(u) {
+    const s = String(u || '').trim();
+    if (!s || /^javascript:/i.test(s)) return '';
+    return s.replace(/[<>"'`\\]/g, '');
+  }
+
+  function escAttr(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function iconSvg(name) {
+    return ICONS[name] || ICONS.search;
+  }
+
+  function renderStep(step) {
+    const rev = step.reverse ? ' reverse' : '';
+    const icon = iconSvg(step.icon || 'search');
+    let body = '';
+
+    (step.checklist || []).forEach(function (line) {
+      body += '<div class="htb-check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>' + esc(line) + '</span></div>';
+    });
+
+    (step.tips || []).forEach(function (t) {
+      body += '<div class="htb-tip"><h4>' + esc(t.title || '') + '</h4><p>' + esc(t.text || '') + '</p></div>';
+    });
+
+    if (step.bullets && step.bullets.length) {
+      body += '<ul class="htb-bullets">';
+      step.bullets.forEach(function (b) {
+        body += '<li>' + esc(b) + '</li>';
+      });
+      body += '</ul>';
+    }
+
+    if (step.couponBox && step.couponBox.show) {
+      const c = step.couponBox;
+      body += '<div class="htb-coupon-wrap"><div class="htb-coupon-inner">';
+      body += '<p class="lbl">' + esc(c.label || 'Use Discount Code') + '</p>';
+      body += '<div class="code">' + esc(c.code || '') + '</div>';
+      body += '<p class="sub">' + esc(c.subtext || '') + '</p>';
+      body += '</div></div>';
+    }
+
+    if (step.proTip && step.proTip.text) {
+      body += '<div class="htb-protip"><span>✨</span><p><strong>' + esc(step.proTip.boldPrefix || 'Pro Tip:') + '</strong> ' + esc(step.proTip.text) + '</p></div>';
+    }
+
+    if (step.cta && step.cta.label) {
+      body += '<a class="htb-cta" href="' + escAttr(step.cta.href || '#') + '">' + esc(step.cta.label) + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>';
+    }
+
+    const src = safeImgSrc(step.image);
+    const showPh = step.usePlaceholder || !src;
+    let media = '';
+    if (showPh) {
+      media = '<div class="htb-placeholder">' + esc(step.placeholderText || 'Add an image URL in data.json for this step.') + '</div>';
+    } else {
+      media = '<div class="htb-media-wrap"><img src="' + src + '" alt="' + esc(step.imageAlt || step.title || '') + '" loading="lazy"></div>';
+    }
+
+    return (
+      '<div class="htb-step' + rev + '">' +
+      '<div class="htb-step-copy">' +
+      '<div class="htb-step-head"><div class="htb-icon-circle">' + icon + '</div><span class="htb-step-num">' + esc(step.number || '') + '</span></div>' +
+      '<h2>' + esc(step.title || '') + '</h2>' +
+      '<p class="htb-sub">' + esc(step.subtitle || '') + '</p>' +
+      body +
+      '</div><div class="htb-step-media">' + media + '</div></div>'
+    );
+  }
+
+  async function init() {
+    const data = await SiteShell.loadData();
+    const t = data.theme || {};
+    SiteShell.applyTheme(t);
+    if (t.accent) document.documentElement.style.setProperty('--accent', t.accent);
+    if (t.siteName) document.getElementById('htbLogo').textContent = t.siteName;
+
+    const nav = data.nav || [];
+    SiteShell.renderNavLinks(document.getElementById('htbNavDesk'), nav, 'how-to-buy.html');
+    SiteShell.renderNavLinks(document.getElementById('htbNavDrawer'), nav, 'how-to-buy.html');
+    SiteShell.wireMobileNav('.nav-mobile-toggle', '#htbNavDrawer');
+
+    const cfg = (data.pages && data.pages.howToBuy) || {};
+    if (cfg.heroTitleLine1 != null) document.getElementById('htbHeroL1').textContent = cfg.heroTitleLine1;
+    if (cfg.heroTitleAccent != null) document.getElementById('htbHeroAccent').textContent = cfg.heroTitleAccent;
+    if (cfg.heroSub != null) document.getElementById('htbHeroSub').textContent = cfg.heroSub;
+
+    const root = document.getElementById('htbSteps');
+    root.innerHTML = (cfg.steps || []).map(renderStep).join('');
+
+    const fc = cfg.finalCta || {};
+    if (fc.title || fc.buttonLabel) {
+      const sec = document.getElementById('htbFinalSection');
+      sec.hidden = false;
+      if (fc.title != null) document.getElementById('htbFinalTitle').textContent = fc.title;
+      if (fc.sub != null) document.getElementById('htbFinalSub').textContent = fc.sub;
+      const btn = document.getElementById('htbFinalBtn');
+      if (fc.buttonLabel != null) btn.textContent = fc.buttonLabel;
+      if (fc.buttonHref != null) btn.href = fc.buttonHref;
+    }
+
+    if (data.pages && data.pages.footer != null) {
+      document.getElementById('htbFooter').textContent = data.pages.footer;
+    }
+
+    document.title = (cfg.pageTitle || t.siteName || 'Site') + ' — How to Buy';
+  }
+
+  init().catch(console.error);
+})();
+</script>
+</body>
+</html>
