@@ -73,5 +73,15 @@
     "surface": "#1a1612",
     "siteName": "SnakeFinds",
     "tagline": ""
+  },
+  "popup": {
+    "enabled": true,
+    "title": "KAKO BUY",
+    "brand": "Kakobuy",
+    "badge": "RECOMMENDED",
+    "desc": "Register through this link for $450 in coupons and $15 off shipping (no threshold).",
+    "code": "outline",
+    "btn_text": "REGISTER NOW",
+    "link": "https://ikako.vip/r/7hjf5"
   }
 }
