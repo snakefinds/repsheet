@@ -778,22 +778,32 @@ class AdminApp:
     def git_auto_push(self):
         if not self.use_git_var.get():
             return
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        cf = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        
         try:
-            cwd = os.path.dirname(os.path.abspath(__file__))
-            cf = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            # 1. Always try to pull first in case we are behind
+            subprocess.run(["git", "pull", "--rebase"], check=True, cwd=cwd, capture_output=True, text=True, creationflags=cf)
+            
+            # 2. Stage and commit local changes
             subprocess.run(["git", "add", "-A"], check=True, cwd=cwd, creationflags=cf)
             res = subprocess.run(["git", "commit", "-m", "💻 Admin Panel Update: content synced"],
                                  cwd=cwd, capture_output=True, text=True, creationflags=cf)
+            
+            # 3. If there was actually something to commit, push it
             if "working tree clean" not in res.stdout and "nothing to commit" not in res.stdout:
-                subprocess.run(["git", "pull", "--rebase"], check=True, cwd=cwd, creationflags=cf)
-                subprocess.run(["git", "push"], check=True, cwd=cwd, creationflags=cf)
+                subprocess.run(["git", "push"], check=True, cwd=cwd, capture_output=True, text=True, creationflags=cf)
                 messagebox.showinfo("Vercel Sync Success",
                     "Pushed to GitHub!\n\nVercel will deploy your changes automatically.")
             else:
-                messagebox.showinfo("No Changes", "No new changes to push.")
+                messagebox.showinfo("No Changes", "No new changes to push (already in sync).")
+                
+        except subprocess.CalledProcessError as e:
+            err_msg = e.stderr if e.stderr else e.stdout
+            messagebox.showwarning("Git Sync Failed",
+                f"Sync failed during: {' '.join(e.cmd)}\n\nDetails:\n{err_msg if err_msg else str(e)}")
         except Exception as e:
-            messagebox.showwarning("Git Push Failed",
-                f"Saved locally but push failed.\n\nDetails: {e}")
+            messagebox.showwarning("Sync Error", f"An unexpected error occurred:\n{e}")
 
     # ── sync helpers ──────────────────────────────────────────────────────────
 
