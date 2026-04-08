@@ -421,9 +421,12 @@
 
 <script src="site-shell.js"></script>
 <script>
-const CATS = ['All','Shoes','T-Shirts','Pants','Jackets/Coats','Sweaters/Hoodies','Bags','Hats/Caps','Accessories','Other'];
-const CAT_EMOJI = {Shoes:'👟','T-Shirts':'👕','Jackets/Coats':'🧥','Sweaters/Hoodies':'🪡',Bags:'👜','Hats/Caps':'🧢',Accessories:'💎',Other:'📦'};
+/** Default pills (order preserved). Custom categories from items are appended after these. */
+const DEFAULT_CATS = ['Shoes','T-Shirts','Pants','Jackets/Coats','Sweaters/Hoodies','Bags','Hats/Caps','Accessories','Other'];
+const CAT_EMOJI = {Shoes:'👟','T-Shirts':'👕',Pants:'👖','Jackets/Coats':'🧥','Sweaters/Hoodies':'🪡',Bags:'👜','Hats/Caps':'🧢',Accessories:'💎',Other:'📦'};
 let activeCat = 'All';
+/** Filled in buildCats: All + DEFAULT_CATS + any category strings used on items */
+let categoryList = ['All', ...DEFAULT_CATS];
 
 let allItems = [];
 let siteTheme = {};
@@ -482,9 +485,35 @@ function applyFindsPageCopy(pages, theme) {
   if (pages.footer != null) document.getElementById('footerText').textContent = pages.footer;
 }
 
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function computeCategoryList(items) {
+  const seen = new Set();
+  for (const it of items) {
+    const c = (it.category != null ? String(it.category) : '').trim();
+    if (c) seen.add(c);
+  }
+  const extras = [...seen]
+    .filter(c => !DEFAULT_CATS.includes(c))
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  return ['All', ...DEFAULT_CATS, ...extras];
+}
+
 function buildCats() {
+  categoryList = computeCategoryList(allItems);
+  if (!categoryList.includes(activeCat)) activeCat = 'All';
   const strip = document.getElementById('catStrip');
-  strip.innerHTML = CATS.map(c => `<button class="cat-btn${activeCat===c?' active':''}" onclick="setCat('${c}')">${c}</button>`).join('');
+  strip.innerHTML = categoryList.map(c => {
+    const active = activeCat === c ? ' active' : '';
+    const js = JSON.stringify(c);
+    return `<button type="button" class="cat-btn${active}" onclick="setCat(${js})">${escapeHtml(c)}</button>`;
+  }).join('');
 }
 
 function setCat(c) { activeCat = c; buildCats(); renderGrid(); }
@@ -494,10 +523,14 @@ function renderGrid() {
   const items = getItems();
   const q = document.getElementById('searchInput').value.toLowerCase();
   const sort = document.getElementById('sortSel').value;
-  let filtered = items.filter(it =>
-    (activeCat === 'All' || it.category === activeCat) &&
-    (!q || it.title.toLowerCase().includes(q) || it.category.toLowerCase().includes(q))
-  );
+  let filtered = items.filter(it => {
+    const cat = (it.category != null ? String(it.category) : '').trim();
+    const title = (it.title != null ? String(it.title) : '').toLowerCase();
+    return (
+      (activeCat === 'All' || cat === activeCat) &&
+      (!q || title.includes(q) || cat.toLowerCase().includes(q))
+    );
+  });
   if (sort === 'price-asc') filtered.sort((a,b) => parseFloat(a.price) - parseFloat(b.price));
   else if (sort === 'price-desc') filtered.sort((a,b) => parseFloat(b.price) - parseFloat(a.price));
   else if (sort === 'name') filtered.sort((a,b) => a.title.localeCompare(b.title));
