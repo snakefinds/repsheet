@@ -433,6 +433,28 @@ let siteTheme = {};
 let sitePopup = {};
 let sitePages = {};
 
+// Glitched placeholder hashes seen during bad bulk-import image passes.
+const BLOCKED_IMAGE_BASENAMES = new Set([
+  '081d6292ac3505fbb05fee1d.png',
+  'be83dbb6dc45938ff2fe86fd.png',
+  '9dc674a36cf0d241876136ac.png',
+  '9ce91ebf604748d78d5ecc6e.png',
+  '84fd155eab70f1350997ab64.png',
+  '71aa074ecee3c3e15c8c11a3.jpg',
+  '7551349251452704bf551f4d.jpg',
+  'f664425091845e041f5501f7.jpg',
+  'ea906ced65f2ee087b073c1b.jpg',
+  '2c57dc940f2e0e52aa30cf88.png',
+  '3f273184429d8d37b3314893.jpg',
+  'dd15f91adc7eaa5216c13a9f.png',
+  'd30ebaa21a26d03304d0d3b0.png',
+  'c1a4b73fa8b58c045807b681.png',
+  '83d1571606dda936f0285f8a.jpg',
+  '42f817c0f09b70f36ec909d5.jpg',
+  'cae1a570769a664a3887a195.jpg',
+  '606a152cd8d67859a91a4ffd.jpg'
+]);
+
 const RATES = { USD: 1, EUR: 0.92, GBP: 0.79, CAD: 1.36, AUD: 1.52 };
 const SYMBOLS = { USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
 let currentCurrency = 'USD';
@@ -445,7 +467,7 @@ function changeCurrency() {
 async function loadData() {
   try {
     const data = await SiteShell.loadData();
-    allItems = data.items || [];
+    allItems = normalizeItemsForDisplay(data.items || []);
     siteTheme = data.theme || {};
     sitePopup = data.popup || {};
     sitePages = data.pages || {};
@@ -461,6 +483,35 @@ async function loadData() {
   } catch (err) {
     console.error('Error loading data', err);
   }
+}
+
+function imageBasename(src) {
+  if (!src) return '';
+  const clean = String(src).split('?')[0].split('#')[0].replace(/\\/g, '/');
+  const i = clean.lastIndexOf('/');
+  return i >= 0 ? clean.slice(i + 1).toLowerCase() : clean.toLowerCase();
+}
+
+function normalizeItemsForDisplay(items) {
+  const freq = new Map();
+  for (const it of items) {
+    const img = (it && it.img != null ? String(it.img) : '').trim();
+    if (!img) continue;
+    freq.set(img, (freq.get(img) || 0) + 1);
+  }
+  return items.map((it) => {
+    const out = { ...it };
+    const img = (out.img != null ? String(out.img) : '').trim();
+    if (!img) return out;
+
+    const base = imageBasename(img);
+    const repeatedLocal = img.includes('images/') && (freq.get(img) || 0) >= 5;
+    const blockedHash = BLOCKED_IMAGE_BASENAMES.has(base);
+    if (blockedHash || repeatedLocal) {
+      out.img = '';
+    }
+    return out;
+  });
 }
 
 function getItems() { return allItems; }
