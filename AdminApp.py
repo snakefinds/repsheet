@@ -7,7 +7,7 @@ import tkinter as tk
 import urllib.request
 from tkinter import messagebox, ttk
 
-from scraper import scrape_ikako, cache_image
+from scraper import scrape_ikako, cache_image, normalize_stored_kakobuy_link
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
 
@@ -112,6 +112,7 @@ def _normalize_bulk_item(it: dict) -> dict:
             out[k] = json.dumps(v, ensure_ascii=False)
         else:
             out[k] = str(v).strip()
+    out["kakobuy"] = normalize_stored_kakobuy_link(out.get("kakobuy", ""))
     return out
 
 
@@ -862,7 +863,7 @@ class AdminApp:
             "title": self.f_title.get().strip(),
             "category": self.f_cat.get().strip(),
             "price": self.f_price.get().strip(),
-            "kakobuy": self.f_kakobuy.get().strip(),
+            "kakobuy": normalize_stored_kakobuy_link(self.f_kakobuy.get().strip()),
             "picksly": self.f_picksly.get().strip(),
             "img": cache_image(self.f_img.get().strip()),
         }

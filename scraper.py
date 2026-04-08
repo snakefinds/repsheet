@@ -20,7 +20,7 @@ import hashlib
 import pathlib
 import urllib.request
 from typing import Any, Dict, Tuple
-from urllib.parse import parse_qs, unquote, urlencode, urlparse
+from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 import os
 import shutil
 
@@ -262,6 +262,82 @@ def _build_picksly(source_url: str) -> str:
         m = re.search(r"/offer/(\d+)", source_url)
         return f"https://picks.ly/item/ALI{m.group(1)}" if m else ""
     return ""
+
+
+def _ensure_kakobuy_affcode(url: str) -> str:
+    """Force affcode=dqfte on any kakobuy.com URL."""
+    if not url:
+        return url
+    parsed = urlparse(url.strip())
+    if "kakobuy.com" not in parsed.netloc.lower():
+        return url.strip()
+    qs = parse_qs(parsed.query, keep_blank_values=True)
+    qs["affcode"] = ["dqfte"]
+    new_q = urlencode(qs, doseq=True)
+    return urlunparse(
+        (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_q, parsed.fragment)
+    )
+
+
+def normalize_kakobuy_storage_url(original: str, landing_url: str, source_url: str) -> str:
+    """
+    Stable kakobuy.com/item/details link for JSON (affcode=dqfte).
+    Used so ikako short links are never left as the stored Buy URL when we can derive Kakobuy.
+    """
+    orig = (original or "").strip()
+    land = (landing_url or "").strip()
+    src = (source_url or "").strip()
+
+    if land and "kakobuy.com" in land.lower() and "/item/" in land.lower().replace(" ", ""):
+        return _ensure_kakobuy_affcode(land)
+
+    if src:
+        low = src.lower()
+        if any(
+            h in low
+            for h in (
+                "weidian.com",
+                "item.taobao.com",
+                "tmall.com",
+                "1688.com",
+                "detail.1688.com",
+            )
+        ):
+            q = urlencode({"url": src, "affcode": "dqfte"})
+            return f"https://www.kakobuy.com/item/details?{q}"
+
+    if (
+        orig
+        and "ikako.vip" not in orig.lower()
+        and "kakobuy.com" in orig.lower()
+        and "/item/" in orig.lower().replace(" ", "")
+    ):
+        return _ensure_kakobuy_affcode(orig)
+
+    if orig and "ikako.vip" in orig.lower():
+        try:
+            final_u, html = _fetch(orig, HEADERS, timeout=22)
+            su = _extract_source_url(final_u, html)
+            if su:
+                q = urlencode({"url": su, "affcode": "dqfte"})
+                return f"https://www.kakobuy.com/item/details?{q}"
+            if "kakobuy.com" in final_u.lower() and "/item/" in final_u.lower().replace(" ", ""):
+                return _ensure_kakobuy_affcode(final_u)
+        except Exception:
+            pass
+
+    if orig and "kakobuy.com" in orig.lower():
+        return _ensure_kakobuy_affcode(orig)
+
+    return orig
+
+
+def normalize_stored_kakobuy_link(kb: str) -> str:
+    """Normalize a user-supplied or imported kakobuy field before saving to data.json."""
+    kb = (kb or "").strip()
+    if not kb:
+        return kb
+    return normalize_kakobuy_storage_url(kb, "", "")
 
 
 def _kakobuy_api_lookup(source_url: str) -> Dict[str, str]:
@@ -633,6 +709,7 @@ def scrape_ikako(url: str) -> Dict[str, str]:
 
             if result.get("img"):
                 result["img"] = resolve_image_url(result["img"])
+            result["kakobuy"] = normalize_kakobuy_storage_url(url, final_url, source_url)
             return result
         finally:
             if not debug_keep_open:
@@ -687,4 +764,5 @@ def scrape_ikako(url: str) -> Dict[str, str]:
     if result.get("img"):
         result["img"] = resolve_image_url(result["img"])
 
+    result["kakobuy"] = normalize_kakobuy_storage_url(url, final_url, source_url)
     return result
