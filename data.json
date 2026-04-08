@@ -687,7 +687,7 @@
     {
       "title": "Dior B30",
       "category": "Shoes",
-      "price": "96.12 / $ 40.46",
+      "price": "40.46",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D830817506303&affcode=dqfte",
       "picksly": "https://picks.ly/item/TB830817506303",
       "img": "images/dde7ca49941c3344e7c0cebc.jpg",
@@ -904,7 +904,7 @@
       "title": "Jordan 3",
       "category": "Shoes",
       "price": "62.72",
-      "kakobuy": "https://ikako.vip/8tc69j",
+      "kakobuy": "https://ikako.vip/payaj",
       "picksly": "https://picks.ly/item/WD6225638171",
       "img": "images/b5fa23e95473937e1a51d9c5.gif",
       "id": 105
@@ -913,7 +913,7 @@
       "title": "Jordan 3 *Budget*",
       "category": "Shoes",
       "price": "36.07",
-      "kakobuy": "https://ikako.vip/26umz",
+      "kakobuy": "https://ikako.vip/f47ay",
       "picksly": "https://picks.ly/item/WD7614459124",
       "img": "images/83c1360b6eeece6f6f64eab9.jpg",
       "id": 106
@@ -931,7 +931,7 @@
       "title": "Jordan 4 *Budget*",
       "category": "Shoes",
       "price": "32.93",
-      "kakobuy": "https://ikako.vip/a9m5x",
+      "kakobuy": "https://ikako.vip/cm652",
       "picksly": "https://picks.ly/item/WD7614443306",
       "img": "images/3efb9161d4517e63fec1a1d6.jpg",
       "id": 108
@@ -967,7 +967,7 @@
       "title": "Jordan 8",
       "category": "Shoes",
       "price": "76.84",
-      "kakobuy": "https://ikako.vip/esqb7",
+      "kakobuy": "https://ikako.vip/5qfceh",
       "picksly": "https://picks.ly/item/WD7611453519",
       "img": "images/4c2dc64691e9f3645bc995da.jpg",
       "id": 112
@@ -985,36 +985,36 @@
       "title": "Jordan 11 *Budget*",
       "category": "Shoes",
       "price": "37.64",
-      "kakobuy": "https://ikako.vip/3vsmk",
+      "kakobuy": "https://ikako.vip/6c5b6",
       "picksly": "https://picks.ly/item/WD7611473265",
       "img": "images/db422cfb55484698183324e5.jpg",
       "id": 114
     },
     {
       "title": "Jordan 12",
-      "price": "70.56",
-      "img": "images/7551349251452704bf551f4d.jpg",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7565944654&affcode=dqfte",
       "category": "Shoes",
+      "price": "70.56",
+      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7565944654&affcode=dqfte",
       "picksly": "https://picks.ly/item/WD7565944654",
+      "img": "images/a078a97d6b40999b02d33f47.jpg",
       "id": 115
     },
     {
-      "title": "Jordan 12 BUDGET",
-      "price": "43.91",
-      "img": "",
-      "kakobuy": "https://ikako.vip/j7v8t",
+      "title": "Jordan 12 *Budget*",
       "category": "Shoes",
-      "picksly": "",
+      "price": "43.91",
+      "kakobuy": "https://ikako.vip/3tyab",
+      "picksly": "https://picks.ly/item/WD7497356603",
+      "img": "images/5a74177a4c55849b99b75173.jpg",
       "id": 116
     },
     {
       "title": "Jordan 13",
-      "price": "76.84",
-      "img": "images/84fd155eab70f1350997ab64.png",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7565970204&affcode=dqfte",
       "category": "Shoes",
+      "price": "76.84",
+      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7565970204&affcode=dqfte",
       "picksly": "https://picks.ly/item/WD7565970204",
+      "img": "images/4ea46360830dde11ec303582.jpg",
       "id": 117
     },
     {
