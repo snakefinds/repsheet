@@ -346,6 +346,8 @@ class AdminApp:
 
         self.root.bind("<Control-s>", self._on_ctrl_s)
         self.root.bind("<Control-n>", self._on_ctrl_n)
+        self.root.bind("<Control-Shift-T>", self._on_ctrl_shift_t)
+        self.root.bind("<Control-Shift-t>", self._on_ctrl_shift_t)
 
     def _set_status(self, text: str):
         if getattr(self, "status_var", None) is not None:
@@ -358,6 +360,25 @@ class AdminApp:
     def _on_ctrl_n(self, _event=None):
         self.save_and_next_item()
         return "break"
+
+    def _on_ctrl_shift_t(self, _event=None):
+        self.title_capitalize_words()
+        return "break"
+
+    def title_capitalize_words(self):
+        """Uppercase first letter of each whitespace-separated word in the title field."""
+        raw = self.f_title.get()
+        if not raw.strip():
+            self._set_status("Title is empty — nothing to change")
+            return
+        parts = []
+        for w in raw.split():
+            if len(w) == 1:
+                parts.append(w.upper())
+            else:
+                parts.append(w[0].upper() + w[1:].lower())
+        self.f_title.set(" ".join(parts))
+        self._set_status("Title: capitalised first letter of each word")
 
     # ── Items tab ─────────────────────────────────────────────────────────────
 
@@ -430,7 +451,12 @@ class AdminApp:
         self.current_id = None
         fields = ttk.Frame(right)
         fields.pack(fill=tk.BOTH, expand=True)
-        self.f_title = self.make_field("Title", fields)
+        title_row = ttk.Frame(fields)
+        title_row.pack(fill=tk.X, pady=3)
+        ttk.Label(title_row, text="Title", width=18, anchor="w").pack(side=tk.LEFT, padx=(0, 8))
+        self.f_title = tk.StringVar()
+        ttk.Entry(title_row, textvariable=self.f_title).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 6))
+        ttk.Button(title_row, text="Capitalise", command=self.title_capitalize_words).pack(side=tk.LEFT)
         self.f_cat = self.make_category_field("Category", fields)
         self.f_price = self.make_field("Price", fields)
         self.f_kakobuy = self.make_field("Kakobuy link", fields)
@@ -439,7 +465,7 @@ class AdminApp:
 
         hint = ttk.Label(
             right,
-            text="Shortcuts: Ctrl+S save   ·   Ctrl+N save and go to next item in the list",
+            text="Shortcuts: Ctrl+S save  ·  Ctrl+N save & next  ·  Ctrl+Shift+T capitalise title words",
             style="Dim.TLabel",
         )
         hint.pack(anchor="w", pady=(4, 0))
