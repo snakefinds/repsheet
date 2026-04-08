@@ -785,6 +785,7 @@ class AdminApp:
             res = subprocess.run(["git", "commit", "-m", "💻 Admin Panel Update: content synced"],
                                  cwd=cwd, capture_output=True, text=True, creationflags=cf)
             if "working tree clean" not in res.stdout and "nothing to commit" not in res.stdout:
+                subprocess.run(["git", "pull", "--rebase"], check=True, cwd=cwd, creationflags=cf)
                 subprocess.run(["git", "push"], check=True, cwd=cwd, creationflags=cf)
                 messagebox.showinfo("Vercel Sync Success",
                     "Pushed to GitHub!\n\nVercel will deploy your changes automatically.")
