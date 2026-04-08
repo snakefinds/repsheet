@@ -17,6 +17,26 @@ _BULK_ITEM_KEYS = ('title', 'price', 'img', 'kakobuy', 'category', 'picksly')
 # During URL bulk import, write data.json every N items so a crash mid-run does not lose everything.
 _BULK_FLUSH_EVERY = 8
 
+# UI (matches site catalog categories in finds.html)
+_UI_FONT = ("Segoe UI", 10) if os.name == "nt" else ("Helvetica", 11)
+_UI_FONT_SM = ("Segoe UI", 9) if os.name == "nt" else ("Helvetica", 10)
+_UI_FONT_TT = ("Segoe UI", 11, "bold") if os.name == "nt" else ("Helvetica", 11, "bold")
+_UI_MONO = ("Consolas", 10) if os.name == "nt" else ("Courier", 10)
+CATEGORIES = (
+    "Shoes",
+    "T-Shirts",
+    "Pants",
+    "Jackets/Coats",
+    "Sweaters/Hoodies",
+    "Bags",
+    "Hats/Caps",
+    "Accessories",
+    "Other",
+)
+# Primary actions (darker than site accent for contrast on buttons)
+_BTN_GO = "#6a9a38"
+_BTN_GO_ACTIVE = "#5d8630"
+
 
 def _relax_json_trailing_commas(s: str) -> str:
     prev = None
@@ -266,8 +286,12 @@ def scrape_url(url):
 class AdminApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("SnakeFinds – Secure Desktop Admin")
-        self.root.geometry("960x720")
+        self.root.title("SnakeFinds — Admin")
+        self.root.geometry("1040x760")
+        self.root.minsize(900, 640)
+
+        self._filter_after_id = None
+        self._filtered_indices = []
 
         self.items = []
         self.theme = {}
@@ -282,16 +306,36 @@ class AdminApp:
 
     # ── UI setup ──────────────────────────────────────────────────────────────
 
-    def setup_ui(self):
-        top = tk.Frame(self.root, padx=10, pady=10)
-        top.pack(fill=tk.X)
-        tk.Label(top, text="🔒 Editing Securely Offline", font=("Arial", 10, "bold"), fg="green").pack(side=tk.LEFT, padx=10)
-        tk.Button(top, text="Reload", command=self.fetch_data).pack(side=tk.LEFT)
-        self.use_git_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(top, text="Auto-Push to GitHub (Vercel Deploy)", variable=self.use_git_var).pack(side=tk.RIGHT, padx=10)
+    def setup_styles(self):
+        st = ttk.Style()
+        try:
+            st.theme_use("clam")
+        except tk.TclError:
+            pass
+        st.configure(".", font=_UI_FONT)
+        st.configure("TNotebook.Tab", padding=(12, 5))
+        st.configure("TLabelFrame.Label", font=_UI_FONT_SM)
+        st.configure("Dim.TLabel", font=_UI_FONT_SM, foreground="#5a5a5a")
+        st.configure("Head.TLabel", font=_UI_FONT_TT, foreground="#222")
 
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+    def setup_ui(self):
+        self.setup_styles()
+
+        top = ttk.Frame(self.root, padding=(12, 10))
+        top.pack(fill=tk.X)
+        ttk.Label(top, text="SnakeFinds Admin", style="Head.TLabel").pack(side=tk.LEFT)
+        ttk.Label(top, text="  ·  edits data.json on disk", style="Dim.TLabel").pack(side=tk.LEFT)
+        ttk.Button(top, text="Reload", command=self.fetch_data).pack(side=tk.LEFT, padx=(14, 0))
+        self.use_git_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(top, text="Auto-push to GitHub after sync", variable=self.use_git_var).pack(side=tk.RIGHT)
+
+        self.notebook = ttk.Notebook(self.root, padding=(0, 4))
+        self.notebook.pack(expand=True, fill=tk.BOTH, padx=10, pady=(0, 4))
+
+        foot = ttk.Frame(self.root, padding=(12, 6))
+        foot.pack(side=tk.BOTTOM, fill=tk.X)
+        self.status_var = tk.StringVar(value="")
+        ttk.Label(foot, textvariable=self.status_var, style="Dim.TLabel").pack(side=tk.LEFT)
 
         self._build_items_tab()
         self._build_bulk_tab()
@@ -300,192 +344,361 @@ class AdminApp:
         self._build_website_json_tab()
         self._build_weight_json_tab()
 
+        self.root.bind("<Control-s>", self._on_ctrl_s)
+        self.root.bind("<Control-n>", self._on_ctrl_n)
+
+    def _set_status(self, text: str):
+        if getattr(self, "status_var", None) is not None:
+            self.status_var.set(text)
+
+    def _on_ctrl_s(self, _event=None):
+        self.save_current_item()
+        return "break"
+
+    def _on_ctrl_n(self, _event=None):
+        self.save_and_next_item()
+        return "break"
+
     # ── Items tab ─────────────────────────────────────────────────────────────
 
     def _build_items_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="Items")
 
-        # Left — list
-        left = tk.Frame(tab)
-        left.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
-        self.item_listbox = tk.Listbox(left, width=32)
-        self.item_listbox.pack(expand=True, fill=tk.Y)
-        self.item_listbox.bind('<<ListboxSelect>>', self.on_item_select)
-        bf = tk.Frame(left)
-        bf.pack(fill=tk.X, pady=5)
-        tk.Button(bf, text="New Item", command=self.new_item).pack(side=tk.LEFT, expand=True, fill=tk.X)
-        tk.Button(bf, text="Delete", command=self.delete_item).pack(side=tk.LEFT, expand=True, fill=tk.X)
+        paned = ttk.Panedwindow(tab, orient=tk.HORIZONTAL)
+        paned.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
 
-        # Right — editor
-        right = tk.Frame(tab, padx=10, pady=10)
-        right.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+        left = ttk.Frame(paned, padding=(0, 0, 10, 0))
+        paned.add(left, weight=1)
 
-        # ── Auto-fill row ──
-        url_frame = tk.LabelFrame(right, text="  🔗 Paste Kakobuy / ikako link to auto-fill  ", padx=8, pady=6)
-        url_frame.pack(fill=tk.X, pady=(0, 10))
+        ttk.Label(left, text="Search (title, category, links…)", style="Dim.TLabel").pack(anchor="w")
+        self.item_search_var = tk.StringVar()
+        ent_search = ttk.Entry(left, textvariable=self.item_search_var)
+        ent_search.pack(fill=tk.X, pady=(2, 6))
+        self.item_search_var.trace_add("write", lambda *_: self._schedule_item_filter_update())
+
+        lf = ttk.Frame(left)
+        lf.pack(fill=tk.BOTH, expand=True)
+        yscroll = ttk.Scrollbar(lf, orient=tk.VERTICAL)
+        self.item_listbox = tk.Listbox(
+            lf,
+            width=36,
+            font=_UI_FONT,
+            yscrollcommand=yscroll.set,
+            activestyle="none",
+            borderwidth=1,
+            relief=tk.SOLID,
+            highlightthickness=0,
+            selectbackground="#cfe9b5",
+            selectforeground="#000000",
+            exportselection=False,
+        )
+        yscroll.config(command=self.item_listbox.yview)
+        yscroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.item_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.item_listbox.bind("<<ListboxSelect>>", self.on_item_select)
+
+        bf = ttk.Frame(left)
+        bf.pack(fill=tk.X, pady=(8, 0))
+        ttk.Button(bf, text="New item", command=self.new_item).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
+        ttk.Button(bf, text="Delete", command=self.delete_item).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(4, 0))
+
+        right = ttk.Frame(paned, padding=(4, 0, 0, 0))
+        paned.add(right, weight=3)
+
+        url_frame = ttk.LabelFrame(right, text="Paste Kakobuy / ikako link", padding=(8, 6))
+        url_frame.pack(fill=tk.X, pady=(0, 8))
+        row_u = ttk.Frame(url_frame)
+        row_u.pack(fill=tk.X)
         self.f_url = tk.StringVar()
-        tk.Entry(url_frame, textvariable=self.f_url, font=("Arial", 11)).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 8))
-        self.autofill_btn = tk.Button(url_frame, text="🔍 Fetch Info", command=self.autofill_from_url, bg="#e8f4fd")
+        ttk.Entry(row_u, textvariable=self.f_url, font=_UI_FONT).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 8))
+        self.autofill_btn = tk.Button(
+            row_u,
+            text="Fetch",
+            command=self.autofill_from_url,
+            font=_UI_FONT_SM,
+            bg="#e8eef5",
+            relief=tk.FLAT,
+            padx=12,
+            pady=4,
+            cursor="hand2",
+        )
         self.autofill_btn.pack(side=tk.LEFT)
-        self.status_label = tk.Label(url_frame, text="", fg="gray", font=("Arial", 9))
-        self.status_label.pack(side=tk.LEFT, padx=6)
+        self.status_label = tk.Label(url_frame, text="", font=_UI_FONT_SM, fg="#666666", anchor="w")
+        self.status_label.pack(anchor="w", pady=(6, 0))
 
-        # ── Fields ──
         self.current_id = None
-        self.f_title   = self.make_field("Title:",           right)
-        self.f_cat     = self.make_field("Category:",        right)
-        self.f_price   = self.make_field("Price ($):",       right)
-        self.f_kakobuy = self.make_field("Kakobuy Link:",    right)
-        self.f_picksly = self.make_field("Picksly QC Link:", right)
-        self.f_img     = self.make_field("Image URL:",       right)
+        fields = ttk.Frame(right)
+        fields.pack(fill=tk.BOTH, expand=True)
+        self.f_title = self.make_field("Title", fields)
+        self.f_cat = self.make_category_field("Category", fields)
+        self.f_price = self.make_field("Price", fields)
+        self.f_kakobuy = self.make_field("Kakobuy link", fields)
+        self.f_picksly = self.make_field("Picksly QC", fields)
+        self.f_img = self.make_field("Image (URL or path)", fields)
 
-        tk.Button(right, text="Save Locally",      command=self.save_current_item, bg="lightblue").pack(pady=8)
-        tk.Button(right, text="Sync Items to Web", command=self.sync_items, bg="lightgreen", font=("Arial", 10, "bold")).pack(pady=4)
+        hint = ttk.Label(
+            right,
+            text="Shortcuts: Ctrl+S save   ·   Ctrl+N save and go to next item in the list",
+            style="Dim.TLabel",
+        )
+        hint.pack(anchor="w", pady=(4, 0))
+
+        btn_row = ttk.Frame(right)
+        btn_row.pack(fill=tk.X, pady=(12, 0))
+        tk.Button(
+            btn_row,
+            text="Save",
+            command=self.save_current_item,
+            font=_UI_FONT,
+            bg=_BTN_GO,
+            fg="white",
+            activebackground=_BTN_GO_ACTIVE,
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=16,
+            pady=6,
+            cursor="hand2",
+        ).pack(side=tk.LEFT, padx=(0, 6))
+        tk.Button(
+            btn_row,
+            text="Save & next",
+            command=self.save_and_next_item,
+            font=_UI_FONT,
+            bg="#5b6b7a",
+            fg="white",
+            activebackground="#4a5866",
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(side=tk.LEFT, padx=(0, 6))
+        tk.Button(
+            btn_row,
+            text="Sync items to web",
+            command=self.sync_items,
+            font=_UI_FONT,
+            bg="#3d6b8a",
+            fg="white",
+            activebackground="#325a75",
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(side=tk.LEFT)
 
     # ── Bulk Import tab ────────────────────────────────────────────────────────
 
     def _build_bulk_tab(self):
-        tab = tk.Frame(self.notebook, padx=20, pady=20)
-        self.notebook.add(tab, text="⚡ Bulk Import")
+        tab = ttk.Frame(self.notebook, padding=16)
+        self.notebook.add(tab, text="Bulk import")
 
-        tk.Label(tab, text="Paste one Kakobuy / ikako link per line — the app fetches everything for you.",
-                 font=("Arial", 10), wraplength=600, justify="left").pack(anchor="w")
-        tk.Label(
+        ttk.Label(
             tab,
-            text="Or paste JSON: a single object, an array [ {...}, {...} ], or {\"items\": [...] } "
-                 "(title, price, img, kakobuy, category, picksly). Trailing commas are tolerated.",
-            font=("Arial", 9), fg="gray", wraplength=600, justify="left",
-        ).pack(anchor="w", pady=(2, 8))
+            text="One Kakobuy / ikako URL per line — the app fills title, price, image, and QC link.",
+            wraplength=720,
+        ).pack(anchor="w")
+        ttk.Label(
+            tab,
+            text="Or paste JSON: one object, an array, or {\"items\": [...] } with title, kakobuy, picksly, category, etc.",
+            style="Dim.TLabel",
+            wraplength=720,
+        ).pack(anchor="w", pady=(4, 8))
 
-        self.bulk_text = tk.Text(tab, height=14, font=("Courier", 10), wrap=tk.NONE)
+        self.bulk_text = tk.Text(tab, height=14, font=_UI_MONO, wrap=tk.NONE, relief=tk.SOLID, borderwidth=1)
         self.bulk_text.pack(expand=True, fill=tk.BOTH)
 
         self.bulk_headless_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(
+        ttk.Checkbutton(
             tab,
-            text="Hide browser during URL import (recommended — less flashing; uses scraper headless mode)",
+            text="Headless browser during URL import (less window flashing)",
             variable=self.bulk_headless_var,
-            font=("Arial", 9),
-            anchor="w",
-        ).pack(anchor="w", pady=(6, 0))
-        tk.Label(
+        ).pack(anchor="w", pady=(8, 0))
+        ttk.Label(
             tab,
-            text="Each link can take ~30–90s (page load + image cache). Items appear in the Items tab as each "
-                 "finishes — you do not need to wait for the whole list.",
-            font=("Arial", 9),
-            fg="gray",
-            wraplength=600,
-            justify="left",
+            text="Each URL may take ~30–90s. Rows appear in Items as they finish.",
+            style="Dim.TLabel",
+            wraplength=720,
         ).pack(anchor="w", pady=(2, 0))
 
-        self.bulk_progress = tk.Label(tab, text="", fg="gray", font=("Arial", 9))
-        self.bulk_progress.pack(anchor="w", pady=(4, 0))
+        self.bulk_progress = tk.Label(tab, text="", font=_UI_FONT_SM, fg="#666666", anchor="w")
+        self.bulk_progress.pack(anchor="w", pady=(6, 0))
 
-        bf = tk.Frame(tab)
-        bf.pack(fill=tk.X, pady=8)
-        tk.Button(bf, text="Clear",                command=self.bulk_clear).pack(side=tk.LEFT, padx=(0, 10))
-        tk.Button(bf, text="⚡ Import & Sync",     command=self.bulk_import,
-                  bg="lightgreen", font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        bf = ttk.Frame(tab)
+        bf.pack(fill=tk.X, pady=10)
+        ttk.Button(bf, text="Clear", command=self.bulk_clear).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Button(
+            bf,
+            text="Import (then sync if enabled)",
+            command=self.bulk_import,
+            font=_UI_FONT,
+            bg=_BTN_GO,
+            fg="white",
+            activebackground=_BTN_GO_ACTIVE,
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(side=tk.LEFT)
 
     # ── Theme tab ─────────────────────────────────────────────────────────────
 
     def _build_theme_tab(self):
-        tab = tk.Frame(self.notebook, padx=20, pady=20)
-        self.notebook.add(tab, text="Theme & Branding")
-        self.t_sitename = self.make_field("Site Name:",             tab)
-        self.t_tagline  = self.make_field("Tagline:",               tab)
-        self.t_accent   = self.make_field("Accent Color (#hex):",   tab)
-        self.t_bg       = self.make_field("Background Color (#hex):", tab)
-        self.t_surface  = self.make_field("Surface Color (#hex):",  tab)
-        tk.Button(tab, text="Sync Theme to Web", command=self.sync_theme,
-                  bg="lightgreen", font=("Arial", 10, "bold")).pack(pady=20)
+        tab = ttk.Frame(self.notebook, padding=16)
+        self.notebook.add(tab, text="Theme")
+        self.t_sitename = self.make_field("Site name", tab)
+        self.t_tagline = self.make_field("Tagline", tab)
+        self.t_accent = self.make_field("Accent (#hex)", tab)
+        self.t_bg = self.make_field("Background (#hex)", tab)
+        self.t_surface = self.make_field("Surface (#hex)", tab)
+        tk.Button(
+            tab,
+            text="Sync theme to web",
+            command=self.sync_theme,
+            font=_UI_FONT,
+            bg=_BTN_GO,
+            fg="white",
+            activebackground=_BTN_GO_ACTIVE,
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(anchor="w", pady=(16, 0))
 
     # ── Popup tab ─────────────────────────────────────────────────────────────
 
     def _build_popup_tab(self):
-        tab = tk.Frame(self.notebook, padx=20, pady=20)
-        self.notebook.add(tab, text="Promo Popup")
+        tab = ttk.Frame(self.notebook, padding=16)
+        self.notebook.add(tab, text="Promo popup")
         self.p_enabled = tk.BooleanVar()
-        tk.Checkbutton(tab, text="Enable Promo Popup", variable=self.p_enabled).pack(anchor="w", pady=5)
-        self.p_title = self.make_field("Top Title:",     tab)
-        self.p_brand = self.make_field("Brand Name:",    tab)
-        self.p_badge = self.make_field("Badge Text:",    tab)
-        self.p_desc  = self.make_field("Description:",   tab)
-        self.p_code  = self.make_field("Promo Code:",    tab)
-        self.p_btn   = self.make_field("Button Text:",   tab)
-        self.p_link  = self.make_field("Affiliate Link:", tab)
-        tk.Button(tab, text="Sync Popup to Web", command=self.sync_popup,
-                  bg="lightgreen", font=("Arial", 10, "bold")).pack(pady=20)
+        ttk.Checkbutton(tab, text="Enable promo popup on site", variable=self.p_enabled).pack(anchor="w", pady=(0, 8))
+        self.p_title = self.make_field("Title", tab)
+        self.p_brand = self.make_field("Brand name", tab)
+        self.p_badge = self.make_field("Badge", tab)
+        self.p_desc = self.make_field("Description", tab)
+        self.p_code = self.make_field("Promo code", tab)
+        self.p_btn = self.make_field("Button text", tab)
+        self.p_link = self.make_field("Affiliate link", tab)
+        tk.Button(
+            tab,
+            text="Sync popup to web",
+            command=self.sync_popup,
+            font=_UI_FONT,
+            bg=_BTN_GO,
+            fg="white",
+            activebackground=_BTN_GO_ACTIVE,
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(anchor="w", pady=(16, 0))
 
     # ── Website copy (JSON) tab ───────────────────────────────────────────────
 
     def _build_website_json_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="Website copy")
 
-        wrap = tk.Frame(tab, padx=12, pady=10)
+        wrap = ttk.Frame(tab, padding=12)
         wrap.pack(fill=tk.BOTH, expand=True)
 
-        tk.Label(
+        ttk.Label(
             wrap,
-            text="Landing page (index.html): heroPart1, heroPart2, heroSub, CTAs, logoText, etc. — valid JSON object.",
-            font=("Arial", 9), fg="gray", wraplength=880, justify="left",
+            text="Landing (index.html): JSON object — heroPart1, heroPart2, heroSub, CTAs, logoText, …",
+            style="Dim.TLabel",
+            wraplength=880,
         ).pack(anchor="w")
-        self.txt_landing = tk.Text(wrap, height=10, font=("Courier", 9), wrap=tk.NONE)
+        self.txt_landing = tk.Text(wrap, height=10, font=_UI_MONO, wrap=tk.NONE, relief=tk.SOLID, borderwidth=1)
         self.txt_landing.pack(fill=tk.BOTH, expand=True, pady=(2, 10))
 
-        tk.Label(
+        ttk.Label(
             wrap,
-            text="Navigation bar: JSON array like [ {\"label\": \"Home\", \"href\": \"index.html\"}, … ]",
-            font=("Arial", 9), fg="gray", wraplength=880, justify="left",
+            text="Nav bar: JSON array e.g. [ {\"label\": \"Home\", \"href\": \"index.html\"}, … ]",
+            style="Dim.TLabel",
+            wraplength=880,
         ).pack(anchor="w")
-        self.txt_nav = tk.Text(wrap, height=7, font=("Courier", 9), wrap=tk.NONE)
+        self.txt_nav = tk.Text(wrap, height=7, font=_UI_MONO, wrap=tk.NONE, relief=tk.SOLID, borderwidth=1)
         self.txt_nav.pack(fill=tk.BOTH, expand=True, pady=(2, 10))
 
-        tk.Label(
+        ttk.Label(
             wrap,
-            text="Other pages: footer, finds (catalog hero), howToBuy (guide: hero lines, steps[] with title, image, checklist/tips/bullets, cta, couponBox, finalCta). See how-to-buy.html + data.json pages.howToBuy.",
-            font=("Arial", 9), fg="gray", wraplength=880, justify="left",
+            text="Pages: footer, finds hero, howToBuy (see how-to-buy.html + pages.howToBuy in data.json).",
+            style="Dim.TLabel",
+            wraplength=880,
         ).pack(anchor="w")
-        self.txt_pages = tk.Text(wrap, height=9, font=("Courier", 9), wrap=tk.NONE)
+        self.txt_pages = tk.Text(wrap, height=9, font=_UI_MONO, wrap=tk.NONE, relief=tk.SOLID, borderwidth=1)
         self.txt_pages.pack(fill=tk.BOTH, expand=True, pady=(2, 10))
 
         tk.Button(
-            wrap, text="Sync Website Copy to data.json", command=self.sync_website_json,
-            bg="lightgreen", font=("Arial", 10, "bold"),
-        ).pack(pady=8)
+            wrap,
+            text="Apply website copy to data.json",
+            command=self.sync_website_json,
+            font=_UI_FONT,
+            bg=_BTN_GO,
+            fg="white",
+            activebackground=_BTN_GO_ACTIVE,
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(anchor="w", pady=8)
 
     # ── Weight estimator (JSON) tab ──────────────────────────────────────────
 
     def _build_weight_json_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="Weight estimator")
 
-        wrap = tk.Frame(tab, padx=12, pady=10)
+        wrap = ttk.Frame(tab, padding=12)
         wrap.pack(fill=tk.BOTH, expand=True)
 
-        tk.Label(
+        ttk.Label(
             wrap,
-            text="Full weightEstimator object: UI strings, defaultPackagingId, packaging[], categories[] (each category: id, label, icon, color, items[{name, grams}]).",
-            font=("Arial", 9), fg="gray", wraplength=880, justify="left",
+            text="weightEstimator JSON: packaging[], categories[] with items {name, grams}, UI strings, defaultPackagingId.",
+            style="Dim.TLabel",
+            wraplength=880,
         ).pack(anchor="w")
-        self.txt_weight = tk.Text(wrap, height=22, font=("Courier", 9), wrap=tk.NONE)
+        self.txt_weight = tk.Text(wrap, height=22, font=_UI_MONO, wrap=tk.NONE, relief=tk.SOLID, borderwidth=1)
         self.txt_weight.pack(fill=tk.BOTH, expand=True, pady=(2, 8))
 
         tk.Button(
-            wrap, text="Sync Weight Estimator to data.json", command=self.sync_weight_json,
-            bg="lightgreen", font=("Arial", 10, "bold"),
-        ).pack(pady=6)
+            wrap,
+            text="Apply weight estimator to data.json",
+            command=self.sync_weight_json,
+            font=_UI_FONT,
+            bg=_BTN_GO,
+            fg="white",
+            activebackground=_BTN_GO_ACTIVE,
+            activeforeground="white",
+            relief=tk.FLAT,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(anchor="w", pady=6)
 
     # ── widget helpers ────────────────────────────────────────────────────────
 
     def make_field(self, label, parent):
-        f = tk.Frame(parent, pady=3)
-        f.pack(fill=tk.X)
-        tk.Label(f, text=label, width=22, anchor="e").pack(side=tk.LEFT)
+        f = ttk.Frame(parent)
+        f.pack(fill=tk.X, pady=3)
+        ttk.Label(f, text=label, width=18, anchor="w").pack(side=tk.LEFT, padx=(0, 8))
         var = tk.StringVar()
-        tk.Entry(f, textvariable=var).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=10)
+        ttk.Entry(f, textvariable=var).pack(side=tk.LEFT, expand=True, fill=tk.X)
+        return var
+
+    def make_category_field(self, label, parent):
+        f = ttk.Frame(parent)
+        f.pack(fill=tk.X, pady=3)
+        ttk.Label(f, text=label, width=18, anchor="w").pack(side=tk.LEFT, padx=(0, 8))
+        var = tk.StringVar()
+        cb = ttk.Combobox(f, textvariable=var, values=CATEGORIES, width=40)
+        cb.pack(side=tk.LEFT, expand=True, fill=tk.X)
         return var
 
     # ── data I/O ──────────────────────────────────────────────────────────────
@@ -530,11 +743,59 @@ class AdminApp:
         self.update_popup_inputs()
         self.update_website_json_inputs()
         self.update_weight_json_inputs()
+        self._set_status(f"Loaded {len(self.items)} items · Ctrl+S save · Ctrl+N save & next")
+
+    def _schedule_item_filter_update(self):
+        if self._filter_after_id is not None:
+            self.root.after_cancel(self._filter_after_id)
+        self._filter_after_id = self.root.after(120, self._apply_item_filter)
+
+    def _apply_item_filter(self):
+        self._filter_after_id = None
+        self._refresh_item_list()
 
     def refresh_listbox(self):
+        self._refresh_item_list()
+
+    def _refresh_item_list(self):
+        if not getattr(self, "item_listbox", None):
+            return
+        keep_id = self.current_id
+        q = ""
+        if getattr(self, "item_search_var", None) is not None:
+            q = self.item_search_var.get().strip().lower()
+        self._filtered_indices = []
+        for i, it in enumerate(self.items):
+            if not q:
+                self._filtered_indices.append(i)
+                continue
+            blob = " ".join(
+                str(it.get(k, "")) for k in ("title", "category", "price", "kakobuy", "picksly", "img")
+            ).lower()
+            if q in blob:
+                self._filtered_indices.append(i)
+
         self.item_listbox.delete(0, tk.END)
-        for it in self.items:
-            self.item_listbox.insert(tk.END, it.get('title', 'Unnamed'))
+        for i in self._filtered_indices:
+            it = self.items[i]
+            title = str(it.get("title", "Unnamed"))
+            if len(title) > 50:
+                title = title[:47] + "…"
+            cat = (it.get("category") or "").strip()
+            line = f"{title}  ·  {cat}" if cat else title
+            self.item_listbox.insert(tk.END, line)
+
+        n = len(self.items)
+        m = len(self._filtered_indices)
+        self._set_status(f"{n} items · {m} shown" + (f' · filter: "{q}"' if q else ""))
+
+        if keep_id is not None:
+            for pos, idx in enumerate(self._filtered_indices):
+                if self.items[idx].get("id") == keep_id:
+                    self.item_listbox.selection_clear(0, tk.END)
+                    self.item_listbox.selection_set(pos)
+                    self.item_listbox.see(pos)
+                    break
 
     # ── single-item editor logic ───────────────────────────────────────────────
 
@@ -542,7 +803,10 @@ class AdminApp:
         sel = self.item_listbox.curselection()
         if not sel:
             return
-        it = self.items[sel[0]]
+        pos = sel[0]
+        if pos < 0 or pos >= len(self._filtered_indices):
+            return
+        it = self.items[self._filtered_indices[pos]]
         self.current_id = it.get('id')
         self.f_url.set(it.get('kakobuy', ''))
         self.f_title.set(it.get('title', ''))
@@ -554,44 +818,69 @@ class AdminApp:
 
     def new_item(self):
         self.current_id = None
-        self.f_url.set('')
-        self.f_title.set('')
-        self.f_cat.set('Shoes')
-        self.f_price.set('0')
-        self.f_kakobuy.set('https://')
-        self.f_picksly.set('')
-        self.f_img.set('')
-        self.status_label.config(text='')
+        if getattr(self, "item_listbox", None):
+            self.item_listbox.selection_clear(0, tk.END)
+        self.f_url.set("")
+        self.f_title.set("")
+        self.f_cat.set("Shoes")
+        self.f_price.set("0")
+        self.f_kakobuy.set("https://")
+        self.f_picksly.set("")
+        self.f_img.set("")
+        self.status_label.config(text="", fg="#666666")
+        self._set_status("New item — fill fields, then Save")
 
-    def save_current_item(self):
+    def _persist_current_item(self) -> bool:
         new_it = {
-            "title":    self.f_title.get(),
-            "category": self.f_cat.get(),
-            "price":    self.f_price.get(),
-            "kakobuy":  self.f_kakobuy.get(),
-            "picksly":  self.f_picksly.get(),
-            "img":      cache_image(self.f_img.get()),
+            "title": self.f_title.get().strip(),
+            "category": self.f_cat.get().strip(),
+            "price": self.f_price.get().strip(),
+            "kakobuy": self.f_kakobuy.get().strip(),
+            "picksly": self.f_picksly.get().strip(),
+            "img": cache_image(self.f_img.get().strip()),
         }
         if self.current_id is not None:
             for i, it in enumerate(self.items):
-                if it.get('id') == self.current_id:
-                    new_it['id'] = self.current_id
+                if it.get("id") == self.current_id:
+                    new_it["id"] = self.current_id
                     self.items[i] = new_it
                     break
         else:
-            new_id = max([i.get('id', 0) for i in self.items] + [0]) + 1
-            new_it['id'] = new_id
+            new_id = max([i.get("id", 0) for i in self.items] + [0]) + 1
+            new_it["id"] = new_id
             self.current_id = new_id
             self.items.append(new_it)
 
-        self.refresh_listbox()
-        idx = next((i for i, it in enumerate(self.items) if it.get('id') == self.current_id), -1)
-        if idx >= 0:
-            self.item_listbox.selection_clear(0, tk.END)
-            self.item_listbox.selection_set(idx)
+        if not self._write_data():
+            return False
+        self._refresh_item_list()
+        return True
 
-        self._write_data()
-        messagebox.showinfo("Saved", "Item saved locally. Click 'Sync Items to Web' to push to GitHub.")
+    def save_current_item(self):
+        if not self._persist_current_item():
+            return
+        self._set_status("Saved to data.json — use “Sync items to web” when you want GitHub/Vercel updated.")
+
+    def save_and_next_item(self):
+        if not self._persist_current_item():
+            return
+        try:
+            pos = next(
+                i
+                for i, idx in enumerate(self._filtered_indices)
+                if self.items[idx].get("id") == self.current_id
+            )
+        except StopIteration:
+            pos = -1
+        next_pos = pos + 1
+        if next_pos < self.item_listbox.size():
+            self.item_listbox.selection_clear(0, tk.END)
+            self.item_listbox.selection_set(next_pos)
+            self.item_listbox.see(next_pos)
+            self.on_item_select(None)
+            self._set_status("Saved — next item")
+        else:
+            self._set_status("Saved — at end of list (or filter)")
 
     def delete_item(self):
         if self.current_id is not None:
@@ -779,29 +1068,104 @@ class AdminApp:
         if not self.use_git_var.get():
             return
         cwd = os.path.dirname(os.path.abspath(__file__))
-        cf = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-        
+        cf_local = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        # New console + inherited stdio: piped stdout/stderr breaks Git Credential Manager
+        # when pull/push run from Thonny/tkinter. A real console lets sign-in / errors show.
+        cf_net = subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0
+
+        def _run_local(args, check=True):
+            return subprocess.run(
+                args,
+                check=check,
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                creationflags=cf_local,
+            )
+
+        def _run_net_inherit_stdio(args):
+            return subprocess.run(args, cwd=cwd, creationflags=cf_net)
+
+        def _git_captured_output(args):
+            r = subprocess.run(
+                args,
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                creationflags=0,
+            )
+            parts = []
+            if r.stdout and r.stdout.strip():
+                parts.append(r.stdout.strip())
+            if r.stderr and r.stderr.strip():
+                parts.append(r.stderr.strip())
+            return "\n\n".join(parts) if parts else f"(exit {r.returncode}, no output)"
+
         try:
-            # 1. Always try to pull first in case we are behind
-            subprocess.run(["git", "pull", "--rebase"], check=True, cwd=cwd, capture_output=True, text=True, creationflags=cf)
-            
-            # 2. Stage and commit local changes
-            subprocess.run(["git", "add", "-A"], check=True, cwd=cwd, creationflags=cf)
-            res = subprocess.run(["git", "commit", "-m", "💻 Admin Panel Update: content synced"],
-                                 cwd=cwd, capture_output=True, text=True, creationflags=cf)
-            
-            # 3. If there was actually something to commit, push it
-            if "working tree clean" not in res.stdout and "nothing to commit" not in res.stdout:
-                subprocess.run(["git", "push"], check=True, cwd=cwd, capture_output=True, text=True, creationflags=cf)
-                messagebox.showinfo("Vercel Sync Success",
-                    "Pushed to GitHub!\n\nVercel will deploy your changes automatically.")
-            else:
-                messagebox.showinfo("No Changes", "No new changes to push (already in sync).")
-                
+            r_pull = _run_net_inherit_stdio(["git", "pull", "--rebase", "--autostash"])
+            if r_pull.returncode != 0:
+                messagebox.showwarning(
+                    "Git Sync Failed",
+                    "git pull --rebase failed.\n\n"
+                    + _git_captured_output(["git", "pull", "--rebase", "--autostash"])
+                    + "\n\nIf you still see errors, open a terminal here and run:\n"
+                    "  git stash -u\n  git pull --rebase\n  git stash pop",
+                )
+                return
+
+            _run_local(["git", "add", "-A"], check=True)
+            res = subprocess.run(
+                ["git", "commit", "-m", "Admin Panel Update: content synced"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                creationflags=cf_local,
+            )
+
+            commit_out = ((res.stdout or "") + (res.stderr or "")).lower()
+            if res.returncode != 0:
+                if "nothing to commit" in commit_out or "working tree clean" in commit_out:
+                    messagebox.showinfo(
+                        "No Changes",
+                        "No new changes to push (already in sync).",
+                    )
+                    return
+                msg = "\n\n".join(
+                    x.strip()
+                    for x in (res.stdout, res.stderr)
+                    if x and x.strip()
+                )
+                messagebox.showwarning(
+                    "Git Sync Failed",
+                    "Commit step failed:\n\n" + (msg or "(no output)"),
+                )
+                return
+
+            r_push = _run_net_inherit_stdio(["git", "push", "origin", "HEAD"])
+            if r_push.returncode != 0:
+                messagebox.showwarning(
+                    "Git Push Failed",
+                    "Saved locally but push failed.\n\nDetails:\n"
+                    + _git_captured_output(["git", "push", "origin", "HEAD"]),
+                )
+                return
+
+            messagebox.showinfo(
+                "Vercel Sync Success",
+                "Pushed to GitHub!\n\nVercel will deploy your changes automatically.",
+            )
+
         except subprocess.CalledProcessError as e:
-            err_msg = e.stderr if e.stderr else e.stdout
-            messagebox.showwarning("Git Sync Failed",
-                f"Sync failed during: {' '.join(e.cmd)}\n\nDetails:\n{err_msg if err_msg else str(e)}")
+            parts = []
+            if e.stdout and e.stdout.strip():
+                parts.append(e.stdout.strip())
+            if e.stderr and e.stderr.strip():
+                parts.append(e.stderr.strip())
+            detail = "\n\n".join(parts) if parts else str(e)
+            messagebox.showwarning(
+                "Git Sync Failed",
+                f"Sync failed during: {' '.join(e.cmd)}\n\nDetails:\n{detail}",
+            )
         except Exception as e:
             messagebox.showwarning("Sync Error", f"An unexpected error occurred:\n{e}")
 

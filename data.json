@@ -128,7 +128,7 @@
     },
     {
       "title": "Gucci Jeans *1:1*",
-      "category": "",
+      "category": "Pants",
       "price": "63",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D1000766846017&affcode=7hjf5",
       "picksly": "https://picks.ly/item/TB1000766846017",
@@ -298,12 +298,12 @@
       "id": 49
     },
     {
-      "title": "bmw rug",
+      "title": "Bmw Rug",
+      "category": "Other",
       "price": "26,00$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D842836085346&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/TB842836085346",
+      "img": "images/d9da41627cf4de621b26df8b.png",
       "id": 50
     },
     {
@@ -9477,8 +9477,116 @@
     "btn_text": "REGISTER NOW",
     "link": "https://ikako.vip/r/7hjf5"
   },
-  "landing": {},
+  "landing": {
+    "ctaSecondaryHref": "how-to-buy.html"
+  },
   "nav": [],
-  "pages": {},
+  "pages": {
+    "footer": "© 2026 SnakeFinds. We do not sell products directly; links point to third-party platforms.",
+    "howToBuy": {
+      "pageTitle": "SnakeFinds",
+      "heroTitleLine1": "HOW TO",
+      "heroTitleAccent": "BUY",
+      "heroSub": "Follow our simple 5-step guide to get high-quality finds delivered straight to your doorstep using Kakobuy.",
+      "steps": [
+        {
+          "number": "01",
+          "icon": "user-plus",
+          "title": "Create Your Kakobuy Account",
+          "subtitle": "Get started with exclusive benefits",
+          "checklist": [
+            "Get $500 in your new account",
+            "40% and 30% off when you sign up!",
+            "Access to exclusive promotions"
+          ],
+          "cta": {
+            "label": "Sign Up Now",
+            "href": "https://ikako.vip/r/7hjf5"
+          },
+          "usePlaceholder": true,
+          "placeholderText": "Add a sign-up screenshot: set steps[0].image in data.json (pages.howToBuy).",
+          "imageAlt": "Create Your Kakobuy Account"
+        },
+        {
+          "number": "02",
+          "icon": "search",
+          "title": "Browse Products on SnakeFinds",
+          "subtitle": "Discover our curated collection",
+          "reverse": true,
+          "tips": [
+            {
+              "title": "Search by Category",
+              "text": "Use our category filters to find specific items"
+            },
+            {
+              "title": "View Popular Items",
+              "text": "Check our trending and best-selling products"
+            }
+          ],
+          "cta": {
+            "label": "Browse Products Now",
+            "href": "finds.html"
+          },
+          "usePlaceholder": true,
+          "placeholderText": "Explore finds.html — categories, search, and featured items.",
+          "imageAlt": "Browse finds on SnakeFinds"
+        },
+        {
+          "number": "03",
+          "icon": "cart",
+          "title": "Purchase Your Items",
+          "subtitle": "Secure checkout process",
+          "bullets": [
+            "View product details and prices",
+            "Get redirected to Kakobuy purchase page",
+            "Complete your purchase securely"
+          ],
+          "usePlaceholder": true,
+          "placeholderText": "Add checkout screenshot: set steps[2].image in data.json.",
+          "imageAlt": "Purchase Your Items"
+        },
+        {
+          "number": "04",
+          "icon": "plane",
+          "title": "International Shipping",
+          "subtitle": "Fast and reliable delivery",
+          "reverse": true,
+          "bullets": [
+            "Review your items in warehouse (QC photos)",
+            "Choose your shipping method",
+            "Pay for international shipping"
+          ],
+          "usePlaceholder": true,
+          "placeholderText": "Add shipping/QC screenshot: set steps[3].image in data.json.",
+          "imageAlt": "International Shipping"
+        },
+        {
+          "number": "05",
+          "icon": "ticket",
+          "title": "Apply Your Coupon",
+          "subtitle": "Maximize your savings",
+          "couponBox": {
+            "show": true,
+            "label": "Use Discount Code",
+            "code": "outline",
+            "subtext": "Get discounts on your purchase!"
+          },
+          "proTip": {
+            "boldPrefix": "Pro Tip:",
+            "text": "Apply the coupon during checkout to maximize your savings."
+          },
+          "usePlaceholder": true,
+          "placeholderText": "Add coupon/checkout screenshot: set steps[4].image in data.json.",
+          "imageAlt": "Apply Your Coupon"
+        }
+      ],
+      "finalCta": {
+        "title": "READY TO START YOUR HAUL?",
+        "sub": "Join thousands of users getting the best deals every day.",
+        "buttonLabel": "CREATE KAKOBUY ACCOUNT",
+        "buttonHref": "https://ikako.vip/r/7hjf5"
+      }
+    }
+  },
   "weightEstimator": {}
 }
