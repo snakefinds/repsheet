@@ -1081,15 +1081,6 @@
       "id": 124
     },
     {
-      "title": "LV Skates",
-      "category": "Shoes",
-      "price": "72.13",
-      "kakobuy": "https://ikako.vip/5vwvg",
-      "picksly": "https://picks.ly/item/WD6386513161",
-      "img": "images/f664425091845e041f5501f7.jpg",
-      "id": 125
-    },
-    {
       "title": "LV Skate",
       "category": "Shoes",
       "price": "62.72",
@@ -1099,57 +1090,57 @@
       "id": 126
     },
     {
-      "title": "Trainers",
-      "price": "73.7",
-      "img": "images/9ce91ebf604748d78d5ecc6e.png",
-      "kakobuy": "https://ikako.vip/u47ys",
+      "title": "LV Trainers",
       "category": "Shoes",
-      "picksly": "",
+      "price": "73.7",
+      "kakobuy": "https://ikako.vip/r7238",
+      "picksly": "https://picks.ly/item/WD6711801370",
+      "img": "images/9ce91ebf604748d78d5ecc6e.png",
       "id": 128
     },
     {
-      "title": "Trainers BUDGET",
-      "price": "29.8",
-      "img": "images/f664425091845e041f5501f7.jpg",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7622551100&affcode=dqfte",
+      "title": "LV Trainers *Budget*",
       "category": "Shoes",
+      "price": "29.8",
+      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7622551100&affcode=dqfte",
       "picksly": "https://picks.ly/item/WD7622551100",
+      "img": "images/31eb1e1c06c444824af1ed20.jpg",
       "id": 129
     },
     {
-      "title": "Slides 1:1",
-      "price": "45.32",
-      "img": "images/2c57dc940f2e0e52aa30cf88.png",
-      "kakobuy": "https://ikako.vip/hu4mh",
+      "title": "Balenciaga Slides 1:1",
       "category": "Shoes",
-      "picksly": "",
+      "price": "45.32",
+      "kakobuy": "https://ikako.vip/jarx3",
+      "picksly": "https://picks.ly/item/WD7482693273",
+      "img": "images/8226e8d1ec37042a27c8c73b.jpg",
       "id": 130
     },
     {
-      "title": "Slides BUDGET",
-      "price": "29.64",
-      "img": "images/42f817c0f09b70f36ec909d5.jpg",
-      "kakobuy": "https://ikako.vip/hu4mh",
+      "title": "Balenciaga Slides *Budget*",
       "category": "Shoes",
-      "picksly": "",
+      "price": "29.64",
+      "kakobuy": "https://ikako.vip/jarx3",
+      "picksly": "https://picks.ly/item/WD7482693273",
+      "img": "images/42f817c0f09b70f36ec909d5.jpg",
       "id": 131
     },
     {
-      "title": "Futures",
-      "price": "93.93",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7337653369&affcode=dqfte",
+      "title": "Maison Margiela Futures",
       "category": "Shoes",
+      "price": "93.93",
+      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7337653369&affcode=dqfte",
       "picksly": "https://picks.ly/item/WD7337653369",
+      "img": "images/959e2b3ff09ab3e95a8c7930.jpg",
       "id": 132
     },
     {
-      "title": "Future Low",
-      "price": "98.79",
-      "img": "images/7551349251452704bf551f4d.jpg",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7337653369&affcode=dqfte",
+      "title": "Maison Margiela Future Low",
       "category": "Shoes",
+      "price": "98.79",
+      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7337653369&affcode=dqfte",
       "picksly": "https://picks.ly/item/WD7337653369",
+      "img": "images/155d6e6f3c14991ce96f0dc0.jpg",
       "id": 133
     },
     {
