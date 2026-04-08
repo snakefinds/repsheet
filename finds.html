@@ -423,7 +423,7 @@
 <script>
 /** Default pills (order preserved). Custom categories from items are appended after these. */
 const DEFAULT_CATS = ['Shoes','T-Shirts','Pants','Jackets/Coats','Sweaters/Hoodies','Bags','Hats/Caps','Accessories','Other'];
-const CAT_EMOJI = {Shoes:'👟','T-Shirts':'👕',Pants:'👖','Jackets/Coats':'🧥','Sweaters/Hoodies':'🪡',Bags:'👜','Hats/Caps':'🧢',Accessories:'💎',Other:'📦'};
+const CAT_EMOJI = {Shoes:'👟','T-Shirts':'👕',Pants:'👖','Jackets/Coats':'🧥','Sweaters/Hoodies':'🪡',Bags:'👜','Hats/Caps':'🧢',Accessories:'💎',Other:'📦',Watches:'⌚'};
 let activeCat = 'All';
 /** Filled in buildCats: All + DEFAULT_CATS + any category strings used on items */
 let categoryList = ['All', ...DEFAULT_CATS];
@@ -502,7 +502,8 @@ function computeCategoryList(items) {
   const extras = [...seen]
     .filter(c => !DEFAULT_CATS.includes(c))
     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-  return ['All', ...DEFAULT_CATS, ...extras];
+  // Custom labels right after "All" so they aren’t past the long default row (horizontal scroll).
+  return ['All', ...extras, ...DEFAULT_CATS];
 }
 
 function buildCats() {

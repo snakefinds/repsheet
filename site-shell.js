@@ -7,7 +7,8 @@
     data: null,
 
     async loadData() {
-      const res = await fetch('./data.json');
+      // Avoid stale catalog: browsers (and some hosts) cache data.json aggressively.
+      const res = await fetch(`./data.json?cb=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('data.json');
       this.data = await res.json();
       return this.data;
