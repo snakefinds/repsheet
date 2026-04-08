@@ -512,7 +512,13 @@ def _grid_to_items(
         return has_word(h, "price") or has_word(h, "usd") or has_word(h, "cost")
 
     def is_image_col(h: str) -> bool:
-        return has_word(h, "image") or has_word(h, "img") or has_word(h, "photo") or has_word(h, "pic")
+        return (
+            has_word(h, "image")
+            or has_word(h, "img")
+            or has_word(h, "photo")
+            or has_word(h, "pic")
+            or has_word(h, "qc")
+        )
 
     def is_product_col(h: str) -> bool:
         return has_word(h, "product") or has_word(h, "title") or has_word(h, "item") or has_word(h, "name")
@@ -523,8 +529,8 @@ def _grid_to_items(
         if not is_product_col(h):
             continue
 
-        # Look ahead in the next ~10 cells for kakobuy link / price / image
-        window = norm_headers[i : i + 12]
+        # Look ahead for kakobuy link / price / image (wide enough for separated column groups).
+        window = norm_headers[i : i + 20]
         g: dict[str, int] = {"title": i}
         for j, wh in enumerate(window):
             idx = i + j
@@ -565,10 +571,37 @@ def _grid_to_items(
                 c = row[i]
                 return (c.get("hyperlink") or c.get("text") or "").strip()
 
+            def find_image_link_fallback() -> str:
+                # Some sheets keep image links in nearby cells or as hyperlinks on the product cell.
+                title_i = g.get("title")
+                if title_i is None:
+                    return ""
+
+                # 1) Try title cell hyperlink first.
+                if title_i < len(row):
+                    title_link = (row[title_i].get("hyperlink") or "").strip()
+                    if title_link:
+                        return title_link
+
+                # 2) Search nearby cells for a non-kakobuy hyperlink likely to be an image.
+                start = max(0, title_i - 1)
+                end = min(len(row), title_i + 10)
+                for ci in range(start, end):
+                    link = (row[ci].get("hyperlink") or "").strip()
+                    if not link:
+                        continue
+                    low = link.lower()
+                    if "kakobuy.com" in low or "ikako.vip" in low:
+                        continue
+                    return link
+                return ""
+
             title = get_text("title") or get_text("product") or get_text("name")
             price = get_text("price")
             img = get_link_or_text("img")
             kakobuy = get_link_or_text("kakobuy")
+            if not img:
+                img = find_image_link_fallback()
 
             item = {
                 "title": title,

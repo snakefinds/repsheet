@@ -422,7 +422,8 @@ class AdminApp:
         bf = ttk.Frame(left)
         bf.pack(fill=tk.X, pady=(8, 0))
         ttk.Button(bf, text="New item", command=self.new_item).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
-        ttk.Button(bf, text="Delete", command=self.delete_item).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(4, 0))
+        ttk.Button(bf, text="Delete", command=self.delete_item).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(4, 4))
+        ttk.Button(bf, text="Delete all", command=self.delete_all_items).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(4, 0))
 
         right = ttk.Frame(paned, padding=(4, 0, 0, 0))
         paned.add(right, weight=3)
@@ -915,6 +916,25 @@ class AdminApp:
             self.refresh_listbox()
             self.new_item()
             self._write_data()
+
+    def delete_all_items(self):
+        count = len(self.items)
+        if count == 0:
+            self._set_status("No items to delete")
+            return
+        ok = messagebox.askyesno(
+            "Delete all items?",
+            f"This will permanently remove all {count} item(s) from data.json.\n\nContinue?",
+        )
+        if not ok:
+            self._set_status("Delete all cancelled")
+            return
+        self.items = []
+        self.current_id = None
+        self.refresh_listbox()
+        self.new_item()
+        if self._write_data():
+            self._set_status(f"Deleted all {count} item(s)")
 
     # ── auto-fill from URL ────────────────────────────────────────────────────
 

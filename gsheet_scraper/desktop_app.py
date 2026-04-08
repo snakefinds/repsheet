@@ -8,7 +8,7 @@ import tkinter as tk
 from dataclasses import dataclass
 from tkinter import filedialog, messagebox, ttk
 
-from .gsheet_scraper import scrape_sheet
+from .gsheet_scraper import build_picksly_from_kakobuy_url, scrape_sheet
 
 
 @dataclass(frozen=True)
@@ -158,14 +158,28 @@ class App(tk.Tk):
                     affcode=cfg.affcode,
                     resolve_affiliate_links=True,
                 )
+                picksly_count = 0
+                for it in items:
+                    pk = build_picksly_from_kakobuy_url(it.get("kakobuy", ""))
+                    it["picksly"] = pk
+                    if pk:
+                        picksly_count += 1
+
                 self.after(0, lambda: self._append_log(f"Extracted {len(items)} items."))
+                self.after(0, lambda: self._append_log(f"Added picks.ly to {picksly_count} items."))
                 payload = {"items": items}
                 os.makedirs(os.path.dirname(os.path.abspath(cfg.out_path)) or ".", exist_ok=True)
                 with open(cfg.out_path, "w", encoding="utf-8") as f:
                     json.dump(payload, f, indent=2, ensure_ascii=False)
                     f.write("\n")
                 self.after(0, lambda: self._append_log(f"Saved {len(items)} items to: {cfg.out_path}"))
-                self.after(0, lambda: messagebox.showinfo("Done", f"Saved {len(items)} items.\n\n{cfg.out_path}"))
+                self.after(
+                    0,
+                    lambda: messagebox.showinfo(
+                        "Done",
+                        f"Saved {len(items)} items.\nPicks.ly added to {picksly_count} items.\n\n{cfg.out_path}",
+                    ),
+                )
             except Exception as e:
                 tb = traceback.format_exc()
                 self.after(0, lambda: self._append_log("ERROR: " + str(e)))
