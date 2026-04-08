@@ -493,6 +493,13 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
+function escapeAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function computeCategoryList(items) {
   const seen = new Set();
   for (const it of items) {
@@ -510,10 +517,10 @@ function buildCats() {
   categoryList = computeCategoryList(allItems);
   if (!categoryList.includes(activeCat)) activeCat = 'All';
   const strip = document.getElementById('catStrip');
+  // data-cat + delegation: inline onclick="setCat("X")" breaks HTML (nested quotes).
   strip.innerHTML = categoryList.map(c => {
     const active = activeCat === c ? ' active' : '';
-    const js = JSON.stringify(c);
-    return `<button type="button" class="cat-btn${active}" onclick="setCat(${js})">${escapeHtml(c)}</button>`;
+    return `<button type="button" class="cat-btn${active}" data-cat="${escapeAttr(c)}">${escapeHtml(c)}</button>`;
   }).join('');
 }
 
@@ -653,6 +660,13 @@ function copyPromo() {
     }, 2000);
   });
 }
+
+document.getElementById('catStrip').addEventListener('click', function (ev) {
+  const btn = ev.target.closest('.cat-btn');
+  if (!btn || !this.contains(btn)) return;
+  const cat = btn.getAttribute('data-cat');
+  if (cat != null) setCat(cat);
+});
 
 loadData();
 </script>

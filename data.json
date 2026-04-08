@@ -200,7 +200,7 @@
     },
     {
       "title": "Racer Jacket Tracksuit",
-      "category": "Sweaters/Hoodies",
+      "category": "Tracksuits",
       "price": "45,00$",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D978211091084&affcode=7hjf5",
       "picksly": "https://picks.ly/item/TB978211091084",
@@ -352,66 +352,48 @@
       "id": 55
     },
     {
-      "title": "best rick owen batch",
+      "title": "Rick Owens Best Batch",
+      "category": "Shoes",
       "price": "70,30$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7707798022&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/WD7707798022",
+      "img": "images/627207afa8dcf40ac9bd3ab8.jpg",
       "id": 56
     },
     {
-      "title": "lego",
-      "price": "30,00$",
-      "img": "",
+      "title": "Lego",
+      "category": "Other",
+      "price": "13",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D621628318044&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/TB621628318044",
+      "img": "images/6d71c7684f481dc05df6932f.jpg",
       "id": 57
     },
     {
-      "title": "funko pop",
-      "price": "11,00$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D684069599168&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/TB684069599168",
-      "id": 58
-    },
-    {
-      "title": "chroem cross",
+      "title": "Chrome Hearts Cross",
+      "category": "Other",
       "price": "50,00$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fitem.taobao.com%2Fitem.htm%3Fid%3D695526660751&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/TB695526660751",
+      "img": "images/813cb7404cf664a5a4ca04cd.jpg",
       "id": 59
     },
     {
-      "title": "union kingdom tracksuit",
+      "title": "Union Kingdom Tracksuit",
+      "category": "Tracksuits",
       "price": "39,84$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7707790170&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/WD7707790170",
+      "img": "images/dd078cd3fc4f12c61be1ba7f.jpg",
       "id": 60
     },
     {
-      "title": "baleciaga white camo pants",
-      "price": "47,34$",
-      "img": "",
-      "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7707742238&affcode=7hjf5",
-      "category": "",
-      "picksly": "https://picks.ly/item/WD7707742238",
-      "id": 61
-    },
-    {
-      "title": "supreme skateboard",
+      "title": "Supreme Skateboard",
+      "category": "Other",
       "price": "8,00$",
-      "img": "",
       "kakobuy": "https://www.kakobuy.com/item/details?url=https%3A%2F%2Fweidian.com%2Fitem.html%3FitemID%3D7344491379&affcode=7hjf5",
-      "category": "",
       "picksly": "https://picks.ly/item/WD7344491379",
+      "img": "images/0bd2869f01b3180f73690450.png",
       "id": 62
     },
     {
