@@ -1,5 +1,5 @@
 """
-scraper.py – SnakeFinds product scraper (no Selenium).
+scraper.py – SnakeFinds product scraper (Selenium only when needed).
 
 Takes an ikako.vip / kakobuy link and extracts:
 - title
@@ -16,6 +16,7 @@ Strategy:
 
 import json
 import re
+import time
 import hashlib
 import pathlib
 import urllib.request
@@ -389,37 +390,37 @@ def _kakobuy_api_lookup(source_url: str) -> Dict[str, str]:
     return {}
 
 
-def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
+def picksly_image_url(picksly_url: str) -> str:
+    """Best-effort product/QC image URL from a picks.ly item page."""
+    if not (picksly_url or "").strip():
+        return ""
+    qc = _picksly_fallback(picksly_url.strip())
+    return (qc.get("img") or "").strip()
+
+
+def _picksly_parse_html(page_html: str) -> Dict[str, str]:
     """
+    Extract title/img/price from picks.ly HTML (static shell, __NEXT_DATA__, or post-JS DOM dump).
     picks.ly often sets generic OG values that are NOT the product.
-    We only accept it if it looks non-generic.
     """
-    if not picksly_url:
-        return {}
 
-    try:
-        _, html = _fetch(picksly_url, HEADERS, timeout=18)
-    except Exception:
-        return {}
-
-    def parse_next_data() -> Dict[str, str]:
-        # Prefer regex, but fall back to string slicing (more robust against minification).
+    def parse_next_data(h: str) -> Dict[str, str]:
         payload = ""
         m = re.search(
             r'<script[^>]+id=["\']__NEXT_DATA__["\'][^>]*>(.*?)</script>',
-            html,
+            h,
             re.I | re.S,
         )
         if m:
             payload = m.group(1)
         else:
             marker = 'id="__NEXT_DATA__"'
-            idx = html.find(marker)
+            idx = h.find(marker)
             if idx != -1:
-                gt = html.find(">", idx)
-                end = html.find("</script>", gt + 1) if gt != -1 else -1
+                gt = h.find(">", idx)
+                end = h.find("</script>", gt + 1) if gt != -1 else -1
                 if gt != -1 and end != -1:
-                    payload = html[gt + 1 : end]
+                    payload = h[gt + 1 : end]
 
         if not payload:
             return {}
@@ -429,8 +430,7 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
         except Exception:
             return {}
 
-        # Flatten strings and pick best candidates (more resilient to shape changes).
-        strings = []
+        strings: list[str] = []
 
         def flatten(o: Any) -> None:
             if isinstance(o, str):
@@ -446,16 +446,33 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
         if not strings:
             return {}
 
-        # Image: first plausible image URL that isn't the generic OG image.
-        img_url = ""
+        img_candidates: list[str] = []
         for s in strings:
-            if isinstance(s, str) and s.startswith("http") and re.search(r"\.(?:jpg|jpeg|png|webp)(?:\?|$)", s, re.I):
-                if "og-image.jpg" in s:
-                    continue
-                img_url = s.split("?")[0].split("!")[0]
-                break
+            if not isinstance(s, str) or not s.startswith("http"):
+                continue
+            if not re.search(r"\.(?:jpg|jpeg|png|webp|gif)(?:\?|$)", s, re.I):
+                continue
+            if "og-image.jpg" in s:
+                continue
+            u = s.split("?")[0].split("!")[0].strip()
+            if u:
+                img_candidates.append(u)
 
-        # Price: first realistic number, or USD string patterns.
+        def _img_score(u: str) -> int:
+            low = u.lower()
+            sc = 0
+            for host in ("weidianimg.com", "geilicdn.com", "alicdn.com", "gw.alicdn.com", "img.alicdn.com"):
+                if host in low:
+                    sc += 6
+            if any(b in low for b in ("logo", "avatar", "icon", "banner", "sprite")):
+                sc -= 8
+            sc += min(len(u), 200) // 40
+            return sc
+
+        img_url = ""
+        if img_candidates:
+            img_url = max(img_candidates, key=_img_score)
+
         price_val = ""
         for s in strings:
             if isinstance(s, str) and re.fullmatch(r"\d{1,5}(?:\.\d{1,2})?", s):
@@ -467,7 +484,6 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
                     price_val = s
                     break
 
-        # Title: longest "human" string that isn't generic.
         title_val = ""
         for s in strings:
             if not isinstance(s, str):
@@ -480,7 +496,6 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
                 continue
             if "http://" in low or "https://" in low:
                 continue
-            # heuristic: title-like strings usually have spaces and letters
             if sum(ch.isalpha() for ch in t) < 4:
                 continue
             if len(t) > len(title_val):
@@ -495,25 +510,21 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
             out["price"] = price_val
         return out
 
-    # First try to parse real item data from Next.js payload.
-    next_data = parse_next_data()
-    if next_data:
+    next_data = parse_next_data(page_html)
+    if next_data and next_data.get("img"):
         return next_data
 
-    # Try OG tags first (often generic on picks.ly).
-    title = _og(html, "og:title")
-    img = _og(html, "og:image")
-    price = _og(html, "product:price:amount") or _og(html, "og:price:amount")
+    title = _og(page_html, "og:title")
+    img = _og(page_html, "og:image")
+    price = _og(page_html, "product:price:amount") or _og(page_html, "og:price:amount")
 
     if title and title.strip().lower().startswith("picks.ly"):
         title = ""
     if img and img.rstrip("/").endswith("/og-image.jpg"):
         img = ""
 
-    # If OG tags were generic/missing, try to regex real values out of the HTML
-    # (Next.js pages often inline JSON).
     if not title:
-        m = re.search(r'"title"\s*:\s*"([^"]{6,250})"', html)
+        m = re.search(r'"title"\s*:\s*"([^"]{6,250})"', page_html)
         if m:
             t = m.group(1).strip()
             low = t.lower()
@@ -522,15 +533,15 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
 
     if not img:
         m = re.search(
-            r'(https?://[^"\'<>\s]+?\.(?:jpg|jpeg|png|webp))(?:\?[^"\'<>\s]*)?',
-            html,
+            r'(https?://[^"\'<>\s]+?\.(?:jpg|jpeg|png|webp|gif))(?:\?[^"\'<>\s]*)?',
+            page_html,
             re.I,
         )
         if m and "og-image.jpg" not in m.group(1):
             img = m.group(1)
 
     if not price:
-        m = re.search(r"\$\s*([0-9]+(?:\.[0-9]{1,2})?)", html)
+        m = re.search(r"\$\s*([0-9]+(?:\.[0-9]{1,2})?)", page_html)
         if m:
             price = m.group(1)
 
@@ -541,6 +552,132 @@ def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
         out["img"] = img.split("?")[0].split("!")[0].strip()
     if price:
         out["price"] = str(price).strip()
+
+    if next_data:
+        if not out.get("title") and next_data.get("title"):
+            out["title"] = next_data["title"]
+        if not out.get("img") and next_data.get("img"):
+            out["img"] = next_data["img"]
+        pv = next_data.get("price", "")
+        if pv and str(pv) not in {"0", "1"} and not out.get("price"):
+            out["price"] = str(pv).strip()
+    return out
+
+
+def _picksly_fallback_selenium(picksly_url: str) -> Dict[str, str]:
+    """
+    picks.ly App Router serves a JS shell: QC photos are not in the initial HTML.
+    Open the page in a headless browser and scrape rendered img/src or embedded JSON.
+    """
+    low = picksly_url.lower()
+    if not picksly_url or "picks.ly" not in low:
+        return {}
+    try:
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+    except Exception:
+        return {}
+
+    prev_headless = os.environ.get("SNAKEFINDS_HEADLESS")
+    os.environ["SNAKEFINDS_HEADLESS"] = "1"
+    driver = None
+    try:
+        driver = _get_driver()
+        driver.set_page_load_timeout(45)
+        driver.get(picksly_url)
+        wait = WebDriverWait(driver, 28)
+        try:
+            wait.until(
+                EC.presence_of_element_located(
+                    (
+                        By.CSS_SELECTOR,
+                        "img[src*='weidian'], img[src*='geilicdn'], img[src*='alicdn'], "
+                        "img[src*='gw.alicdn'], img[src*='img.alicdn'], picture img",
+                    )
+                )
+            )
+        except Exception:
+            try:
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "main img, article img")))
+            except Exception:
+                pass
+        for _ in range(4):
+            time.sleep(0.7)
+            try:
+                driver.execute_script(
+                    "window.scrollTo(0, Math.min(document.body.scrollHeight || 0, 1600));"
+                )
+            except Exception:
+                break
+        html = driver.page_source
+        out = _picksly_parse_html(html)
+        if out.get("img"):
+            return out
+
+        srcs: list[str] = []
+        try:
+            for el in driver.find_elements(By.CSS_SELECTOR, "img[src], img[data-src]"):
+                for attr in ("src", "data-src"):
+                    src = (el.get_attribute(attr) or "").strip()
+                    if not src or src.startswith("data:"):
+                        continue
+                    if IMAGE_EXT_RE.search(src) or CDN_RE.search(src):
+                        low_src = src.lower()
+                        if "og-image" in low_src or "twitter-image" in low_src:
+                            continue
+                        srcs.append(src.split("?")[0].split("!")[0])
+        except Exception:
+            pass
+        cdn_srcs = [s for s in srcs if CDN_RE.search(s)]
+        pick = cdn_srcs[0] if cdn_srcs else (srcs[0] if srcs else "")
+        if pick:
+            out["img"] = pick
+        if not out.get("img"):
+            m = CDN_RE.search(html)
+            if m:
+                cand = m.group(0).split("?")[0].split("!")[0]
+                if "og-image" not in cand.lower():
+                    out["img"] = cand
+        return out
+    except Exception:
+        return {}
+    finally:
+        if prev_headless is None:
+            os.environ.pop("SNAKEFINDS_HEADLESS", None)
+        else:
+            os.environ["SNAKEFINDS_HEADLESS"] = prev_headless
+        if driver:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+
+
+def _picksly_fallback(picksly_url: str) -> Dict[str, str]:
+    if not picksly_url:
+        return {}
+
+    try:
+        _, html = _fetch(picksly_url, HEADERS, timeout=18)
+    except Exception:
+        return {}
+
+    out = _picksly_parse_html(html)
+    if out.get("img"):
+        return out
+
+    js = _picksly_fallback_selenium(picksly_url)
+    if not js:
+        return out
+    if js.get("img"):
+        out["img"] = js["img"]
+    if not out.get("title") and js.get("title"):
+        out["title"] = js["title"]
+    if not out.get("price") and js.get("price"):
+        pv = str(js["price"]).strip()
+        if pv not in {"0", "1"}:
+            out["price"] = pv
     return out
 
 
@@ -707,6 +844,11 @@ def scrape_ikako(url: str) -> Dict[str, str]:
             if debug_keep_open:
                 input("SNAKEFINDS_KEEP_OPEN=1: Press Enter to close browser and continue...")
 
+            if picksly:
+                pl_img = picksly_image_url(picksly)
+                if pl_img:
+                    result["img"] = pl_img
+
             if result.get("img"):
                 result["img"] = resolve_image_url(result["img"])
             result["kakobuy"] = normalize_kakobuy_storage_url(url, final_url, source_url)
@@ -760,6 +902,11 @@ def scrape_ikako(url: str) -> Dict[str, str]:
         m = CDN_RE.search(kb_html)
         if m:
             result["img"] = m.group(0).split("?")[0].split("!")[0]
+
+    if picksly:
+        pl_img = picksly_image_url(picksly)
+        if pl_img:
+            result["img"] = pl_img
 
     if result.get("img"):
         result["img"] = resolve_image_url(result["img"])
